@@ -1,0 +1,189 @@
+	Concepto general
+
+Cada cliente recibe o compra un llavero de Café Rodante con un identificador NFC único. Cuando realiza una compra, el personal acerca el llavero al teléfono o dispositivo de Café Rodante y registra los productos consumidos.
+
+El sistema calcula automáticamente los Crepipuntos:
+
+Cada producto comprado = 2 Crepipuntos.
+
+Al finalizar el registro, la pantalla muestra:
+
+* Productos comprados.
+* Puntos generados en esa compra.
+* Puntos acumulados.
+* Recompensas disponibles.
+* Historial reciente.
+* Opción de canjear o seguir acumulando.
+
+Por ejemplo:
+
+Compraste 2 productos.
+Ganaste 4 Crepipuntos.
+Ahora tienes 18 Crepipuntos.
+Te faltan 2 para desbloquear un producto gratis.
+
+Cuando el cliente llega a 20 puntos, el personal puede preguntarle:
+
+Ya tienes una recompensa disponible. ¿Quieres utilizarla ahora o conservar tus puntos para una recompensa mayor?
+
+Flujo de una compra
+
+1. El cliente realiza su pedido.
+2. El personal abre la app o web interna de Café Rodante.
+3. Selecciona Registrar compra.
+4. El cliente acerca su llavero al dispositivo.
+5. Aparece su perfil.
+6. El empleado registra la cantidad de productos comprados.
+7. El sistema agrega 2 puntos por cada producto.
+8. Se muestra el nuevo saldo y las recompensas disponibles.
+9. El empleado confirma la operación.
+10. La compra queda guardada en el historial.
+
+
+
+Las recompensas y los puntos necesarios podrían modificarse desde el panel administrativo sin reprogramar la aplicación.
+
+También podrían existir recompensas temporales:
+
+* Puntos dobles en días con menor venta.
+* Premio de cumpleaños.
+* Producto exclusivo para usuarios del llavero.
+* Recompensa por visitar diferentes sucursales.
+* Bonificación por invitar a otra persona.
+* Retos como “Compra tres bebidas distintas este mes”.
+
+Perfiles dentro del sistema
+
+Cliente
+
+El cliente no necesita una cuenta complicada. Su perfil puede incluir:
+
+* Nombre o apodo.
+* Número de llavero.
+* Crepipuntos disponibles.
+* Recompensas desbloqueadas.
+* Historial de visitas.
+* Fecha de cumpleaños, opcional.
+* Teléfono, opcional.
+* Estado del llavero: activo, perdido o bloqueado.
+
+Empleado
+
+Puede:
+
+* Leer llaveros.
+* Registrar productos.
+* Consultar puntos.
+* Mostrar recompensas.
+* Realizar canjes.
+* Consultar las operaciones que hizo durante su turno.
+
+No puede:
+
+* Crear puntos manualmente.
+* Modificar compras anteriores.
+* Cambiar recompensas.
+* Ver información administrativa sensible.
+
+Administrador
+
+Puede:
+
+* Registrar nuevos llaveros.
+* Crear empleados.
+* Consultar ventas y puntos.
+* Agregar o modificar recompensas.
+* Bloquear llaveros.
+* Transferir los puntos de un llavero perdido a uno nuevo.
+* Revisar cancelaciones y movimientos sospechosos.
+* Consultar resultados por sucursal.
+* Lanzar promociones.
+
+Registro de un nuevo llavero
+
+Cuando una persona recibe su charm:
+
+1. El empleado selecciona Activar nuevo llavero.
+2. Acerca el llavero al dispositivo.
+3. Registra el nombre o apodo del cliente.
+4. Opcionalmente agrega su teléfono y cumpleaños.
+5. El sistema activa el identificador.
+6. El cliente puede comenzar a acumular puntos inmediatamente.
+
+Para hacerlo más atractivo, el llavero podría comenzar con:
+
+Bienvenido a Crepipuntos. Tu llavero ya tiene 2 puntos de regalo.
+
+Qué pasa si el cliente pierde el llavero
+
+El cliente proporciona su teléfono, nombre o código de recuperación. El administrador bloquea el llavero anterior y transfiere el saldo a uno nuevo.
+
+Así, quien encuentre el llavero perdido no podrá utilizar los puntos.
+
+También se puede establecer un PIN de canje: acumular puntos no requeriría PIN, pero para usar recompensas de mayor valor se solicitarían cuatro dígitos elegidos por el cliente.
+
+Cómo debería verse la app del personal
+
+La pantalla inicial tendría acciones muy simples:
+
+Café Rodante — Crepipuntos
+
+* Registrar compra
+* Consultar cliente
+* Canjear recompensa
+* Activar llavero
+* Historial del turno
+
+Cuando se lee el llavero:
+
+Hola, Dante
+
+18 Crepipuntos
+
+Te faltan 2 puntos para tu siguiente recompensa.
+
+Compra actual
+
+* 1 crepa
+* 1 frappé
+
+Puntos generados: +4
+
+Botón principal:
+
+Confirmar compra
+
+Después:
+
+Compra registrada
+
+Nuevo saldo: 22 Crepipuntos
+
+Recompensa disponible: Producto gratis
+
+* Canjear ahora
+* Guardar para después
+
+
+*Primera versión viable
+
+Para lanzar el proyecto, la primera versión debería incluir únicamente:
+
+1. Registro y activación de llaveros.
+2. Lectura del identificador NFC.
+3. Registro de productos comprados.
+4. Cálculo automático de puntos.
+5. Consulta de saldo.
+6. Canje de recompensas.
+7. Historial de movimientos.
+8. Perfiles de empleado y administrador.
+9. Bloqueo y reemplazo de llaveros.
+10. Panel básico con estadísticas.
+* Cuántas veces regresa cada cliente.
+* Cuáles son los clientes más frecuentes.
+* Qué sucursal genera más puntos.
+* Cuántas recompensas se entregan.
+* Cuáles productos generan mayor recurrencia.
+* Cuántos clientes dejan de regresar.
+* Qué promociones funcionan.
+* Cuánto tiempo tarda un cliente en llegar a una recompensa.*

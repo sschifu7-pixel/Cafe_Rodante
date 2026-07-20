@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}Historial: {{ cliente.nombre }} - Café Rodante{% endblock %}
+
+{% block content %}
+<div class="history-container">
+    <!-- Mini Profile Summary -->
+    <div class="client-profile-header mini-header">
+        <div class="profile-avatar">
+            <i class="fa-solid fa-user"></i>
+        </div>
+        <div class="profile-details">
+            <h2>{{ cliente.nombre }}</h2>
+            <span class="client-id-badge">ID: {{ cliente.nfc_uid }}</span>
+        </div>
+    </div>
+
+    <!-- Current Balance Card (mockup style) -->
+    <div class="balance-card">
+        <div class="balance-inner">
+            <span class="balance-lbl">Saldo actual</span>
+            <div class="balance-val">
+                <span class="balance-num">{{ cliente.crepipuntos }}</span>
+                <span class="balance-unit">puntos</span>
+            </div>
+        </div>
+        <i class="fa-solid fa-cart-shopping balance-bg-icon"></i>
+    </div>
+
+    <!-- History list -->
+    <div class="card history-list-card">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-clock-rotate-left"></i> Historial de Movimientos</h3>
+            <span class="helper-text">Registro completo de compras y canjes</span>
+        </div>
+
+        <div class="timeline-container">
+            {% for mov in movimientos %}
+            <div class="timeline-item">
+                <div class="timeline-date-col">
+                    <span class="date-day">{{ mov.fecha|date:"d" }}</span>
+                    <span class="date-month">{{ mov.fecha|date:"M" }}</span>
+                </div>
+                <div class="timeline-content-col">
+                    <div class="timeline-main">
+                        <span class="timeline-title">
+                            {% if mov.tipo == 'acumulacion' %}
+                            Compra registrada
+                            {% elif mov.tipo == 'canje' %}
+                            Recompensa utilizada
+                            {% else %}
+                            Ajuste de saldo
+                            {% endif %}
+                        </span>
+                        <p class="timeline-desc">{{ mov.referencia }}</p>
+                        {% if mov.venta %}
+                        <span class="timeline-sub">Venta #{{ mov.venta.id }} | Empleado: {{ mov.venta.empleado.first_name|default:mov.venta.empleado.username }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="timeline-points">
+                        <span class="points-val {% if mov.cantidad >= 0 %}pts-positive{% else %}pts-negative{% endif %}">
+                            {% if mov.cantidad >= 0 %}+{% endif %}{{ mov.cantidad }} pts
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="no-history-placeholder">
+                <i class="fa-solid fa-calendar-day"></i>
+                <p>El cliente aún no registra movimientos en el sistema.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

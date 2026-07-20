@@ -1,0 +1,160 @@
+{% extends 'base.html' %}
+{% block title %}Activar Llavero NFC - Café Rodante{% endblock %}
+
+{% block content %}
+<div class="register-container">
+    <div class="card register-card">
+        <div class="card-header">
+            <h3><i class="fa-solid fa-keychain"></i> Activar Llavero NFC</h3>
+            <span class="helper-text">Registra un nuevo cliente y asócialo a su llavero</span>
+        </div>
+
+        <form method="post" action="{% url 'registrar_cliente' %}" class="register-form">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="id_nombre"><i class="fa-solid fa-signature"></i> Nombre o Apodo *</label>
+                <input type="text" name="nombre" id="id_nombre" placeholder="Ej. Dante, Sofía" required value="{{ nombre|default:'' }}">
+            </div>
+
+            <div class="form-group">
+                <label for="id_nfc_uid"><i class="fa-solid fa-nfc-symbol"></i> UID del Llavero NFC *</label>
+                <div class="nfc-input-group">
+                    <input type="text" name="nfc_uid" id="id_nfc_uid" placeholder="CRP-XXXXXX" required readonly value="{{ nfc_uid|default:'' }}">
+                    <button type="button" class="btn-nfc-scan" id="btnNfcScanForm" onclick="startFormNfcScan()">
+                        <i class="fa-solid fa-nfc-symbol"></i> Escanear
+                    </button>
+                </div>
+                <span class="form-help-text" id="nfcFormHelpText">Haz clic en "Escanear" y acerca el llavero nuevo al dispositivo para capturar su UID.</span>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group col-6">
+                    <label for="id_telefono"><i class="fa-solid fa-phone"></i> Teléfono (Opcional)</label>
+                    <input type="tel" name="telefono" id="id_telefono" placeholder="5512345678" value="{{ telefono|default:'' }}">
+                </div>
+                <div class="form-group col-6">
+                    <label for="id_cumpleanos"><i class="fa-solid fa-cake-candles"></i> Cumpleaños (Opcional)</label>
+                    <input type="date" name="cumpleanos" id="id_cumpleanos" value="{{ cumpleanos|default:'' }}">
+                </div>
+            </div>
+
+            <div class="form-actions">
+                <a href="{% url 'home' %}" class="btn-outline">Cancelar</a>
+                <button type="submit" class="btn-primary">
+                    <span>Activar Llavero (+2 pts)</span>
+                    <i class="fa-solid fa-circle-check"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Developer NFC Simulator helper for registration -->
+    <div class="card simulator-card">
+        <div class="simulator-header">
+            <i class="fa-solid fa-laptop-code"></i>
+            <h4>Simulador para Registro (Modo de Prueba)</h4>
+        </div>
+        <p>Genera un UID aleatorio para simular el escaneo de un llavero que nunca ha sido registrado:</p>
+        <button type="button" class="btn-sim-full" onclick="simulateRegistrationScan()">
+            <i class="fa-solid fa-keychain"></i> Simular Escaneo de Llavero Nuevo
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Get query params if we came from home simulator
+    document.addEventListener("DOMContentLoaded", function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const uidParam = urlParams.get('nfc_uid');
+        if (uidParam) {
+            document.getElementById('id_nfc_uid').value = uidParam.toUpperCase();
+            showFlashMessage(`Llavero nuevo detectado: ${uidParam}. Completa el nombre para activar.`, 'info');
+        }
+    });
+
+    function startFormNfcScan() {
+        const uidInput = document.getElementById('id_nfc_uid');
+        const helpText = document.getElementById('nfcFormHelpText');
+        const btn = document.getElementById('btnNfcScanForm');
+
+        if (!('NDEFReader' in window)) {
+            showFlashMessage('La lectura NFC física no es soportada en este navegador. Usa el simulador de abajo.', 'error');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Leyendo...';
+        helpText.innerText = "Esperando llavero... Acerca el tag al lector NFC.";
+        helpText.style.color = "var(--primary)";
+
+        try {
+            const ndef = new NDEFReader();
+            ndef.scan().then(() => {
+                ndef.onreading = ({ serialNumber }) => {
+                    const formatUID = serialNumber.replace(/:/g, '').toUpperCase();
+                    uidInput.value = formatUID;
+                    
+                    // Reset button state
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-nfc-symbol"></i> Escanear';
+                    helpText.innerText = `Llavero detectado: ${formatUID}`;
+                    helpText.style.color = "var(--success)";
+                    
+                    showFlashMessage(`¡Llavero leído con éxito! UID: ${formatUID}`, 'success');
+                    
+                    // Play beep
+                    playBeepSound();
+                };
+                
+                ndef.onreadingerror = () => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fa-solid fa-nfc-symbol"></i> Escanear';
+                    helpText.innerText = "Error en la lectura. Intenta de nuevo.";
+                    helpText.style.color = "red";
+                    showFlashMessage('Error al leer el tag NFC.', 'error');
+                };
+            }).catch(error => {
+                console.error(error);
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fa-solid fa-nfc-symbol"></i> Escanear';
+                helpText.innerText = "Permisos NFC denegados o hardware inactivo.";
+                helpText.style.color = "red";
+            });
+        } catch(err) {
+            console.error(err);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-nfc-symbol"></i> Escanear';
+        }
+    }
+
+    function simulateRegistrationScan() {
+        const randId = "CRP-" + Math.random().toString(36).substring(2, 8).toUpperCase();
+        document.getElementById('id_nfc_uid').value = randId;
+        
+        const helpText = document.getElementById('nfcFormHelpText');
+        helpText.innerText = `Simulación exitosa: Llavero ${randId}`;
+        helpText.style.color = "var(--success)";
+        
+        showFlashMessage(`Llavero simulado: ${randId}`, 'success');
+        playBeepSound();
+    }
+
+    function playBeepSound() {
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 1200;
+            gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.12);
+        } catch(e) {}
+    }
+</script>
+{% endblock %}

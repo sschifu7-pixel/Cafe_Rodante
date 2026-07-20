@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% block title %}Canjear Recompensas: {{ cliente.nombre }} - Café Rodante{% endblock %}
+
+{% block content %}
+<div class="redeem-container">
+    <!-- Mini Profile Summary -->
+    <div class="client-profile-header mini-header">
+        <div class="profile-avatar">
+            <i class="fa-solid fa-user"></i>
+        </div>
+        <div class="profile-details">
+            <h2>{{ cliente.nombre }}</h2>
+            <span class="client-id-badge">ID: {{ cliente.nfc_uid }}</span>
+        </div>
+    </div>
+
+    <!-- Current Points Summary -->
+    <div class="points-summary-card">
+        <div class="pts-label">Crepipuntos disponibles</div>
+        <div class="pts-value"><span id="clientPointsBalance">{{ cliente.crepipuntos }}</span> <span class="pts-unit">puntos</span></div>
+    </div>
+
+    <!-- Rewards Catalog -->
+    <div class="card rewards-catalog-card">
+        <div class="card-header flex-header-subtle">
+            <div>
+                <h3><i class="fa-solid fa-gift"></i> Catálogo de Recompensas</h3>
+                <span class="helper-text">Selecciona un premio y confirma para realizar el canje</span>
+            </div>
+            <span class="badge-dev-status"><i class="fa-solid fa-code"></i> Módulo de Canje</span>
+        </div>
+
+        <div class="rewards-grid">
+            {% for recompensa in recompensas %}
+            <div class="reward-item-card {% if cliente.crepipuntos < recompensa.puntos_requeridos %}locked{% else %}unlocked{% endif %}" id="reward-{{ recompensa.id }}">
+                <div class="reward-icon-col">
+                    <div class="reward-avatar">
+                        {% if recompensa.puntos_requeridos < 30 %}
+                        <i class="fa-solid fa-cookie-bite"></i>
+                        {% elif recompensa.puntos_requeridos < 80 %}
+                        <i class="fa-solid fa-shirt"></i>
+                        {% else %}
+                        <i class="fa-solid fa-bottle-water"></i>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="reward-info-col">
+                    <h4 class="reward-name">{{ recompensa.nombre }}</h4>
+                    <span class="reward-cost">{{ recompensa.puntos_requeridos }} puntos</span>
+                    
+                    {% if cliente.crepipuntos < recompensa.puntos_requeridos %}
+                    <span class="reward-status-lbl"><i class="fa-solid fa-lock"></i> Faltan {{ recompensa.puntos_requeridos|add:"-0"|add:cliente.crepipuntos }} pts</span>
+                    {% else %}
+                    <span class="reward-status-lbl text-success"><i class="fa-solid fa-circle-check"></i> Disponible</span>
+                    {% endif %}
+                </div>
+                <div class="reward-action-col">
+                    <button type="button" class="btn-redeem" 
+                            id="btn-redeem-{{ recompensa.id }}"
+                            data-id="{{ recompensa.id }}"
+                            data-nombre="{{ recompensa.nombre }}"
+                            data-puntos="{{ recompensa.puntos_requeridos }}"
+                            {% if cliente.crepipuntos < recompensa.puntos_requeridos %}disabled{% endif %}
+                            onclick="handleRedeem(this)">
+                        Canjear
+                    </button>
+                </div>
+            </div>
+            {% empty %}
+            <div class="no-rewards-placeholder">
+                <i class="fa-solid fa-circle-info"></i>
+                <p>No hay recompensas activas cargadas en el sistema.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    const clientUid = "{{ cliente.nfc_uid }}";
+
+    function handleRedeem(btn) {
+        const id = btn.dataset.id;
+        const name = btn.dataset.nombre;
+        const points = parseInt(btn.dataset.puntos, 10);
+        redeemReward(id, name, points);
+    }
+
+    function redeemReward(id, name, points) {
+        if (!confirm(`¿Estás seguro de que deseas canjear "${name}" por ${points} Crepipuntos?`)) {
+            return;
+        }
+
+        const btn = document.getElementById(`btn-redeem-${id}`);
+        const originalText = btn.innerText;
+        btn.disabled = true;
+        btn.innerText = 'Procesando...';
+
+        fetch(`/cliente/${clientUid}/realizar-canje/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ recompensa_id: id })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Yay, confetti!
+                confetti({
+                    particleCount: 200,
+                    spread: 90,
+                    origin: { y: 0.6 }
+                });
+
+                showFlashMessage(data.message, 'success');
+                
+                // Update UI balance
+                document.getElementById('clientPointsBalance').innerText = data.nuevo_saldo;
+                
+                // Refresh rewards cards availability dynamically
+                updateRewardsAvailability(data.nuevo_saldo);
+            } else {
+                showFlashMessage(data.message, 'error');
+                btn.disabled = false;
+                btn.innerText = originalText;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showFlashMessage('Error al realizar el canje. Intente más tarde.', 'error');
+            btn.disabled = false;
+            btn.innerText = originalText;
+        });
+    }
+
+    function updateRewardsAvailability(newBalance) {
+        // Iterate through all reward card elements and update classes & buttons
+        const rewardCards = document.querySelectorAll('.reward-item-card');
+        rewardCards.forEach(card => {
+            const rewardId = card.id.replace('reward-', '');
+            // We get points cost from elements
+            const costText = card.querySelector('.reward-cost').innerText;
+            const pointsCost = parseInt(costText.replace(' puntos', ''));
+            const btn = document.getElementById(`btn-redeem-${rewardId}`);
+            const statusLbl = card.querySelector('.reward-status-lbl');
+            
+            if (newBalance < pointsCost) {
+                card.className = 'reward-item-card locked';
+                if (btn) btn.disabled = true;
+                const missing = pointsCost - newBalance;
+                if (statusLbl) statusLbl.innerHTML = `<i class="fa-solid fa-lock"></i> Faltan ${missing} pts`;
+            } else {
+                card.className = 'reward-item-card unlocked';
+                if (btn) btn.disabled = false;
+                if (statusLbl) statusLbl.innerHTML = `<i class="fa-solid fa-circle-check"></i> Disponible`;
+            }
+        });
+    }
+
+    // CSRF helper
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %}

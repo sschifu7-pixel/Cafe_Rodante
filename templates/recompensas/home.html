@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+{% block title %}Inicio - Crepipuntos Café Rodante{% endblock %}
+
+{% block content %}
+<div class="home-container">
+    <!-- NFC Waiting Card (Pantalla 3: Lectura NFC) -->
+    <div class="card scan-card">
+        <div class="scan-animation" id="scanAnimationBox">
+            <div class="pulse-wave wave-1"></div>
+            <div class="pulse-wave wave-2"></div>
+            <div class="pulse-wave wave-3"></div>
+            <div class="scan-icon-container">
+                <i class="fa-solid fa-nfc-symbol scan-icon animate-pulse" id="scanIcon"></i>
+            </div>
+        </div>
+        <h2 class="scan-title" id="scanTitle">Acerca tu NFC</h2>
+        <p class="scan-subtitle" id="scanSubtitle">Coloca el llavero del cliente cerca de la antena NFC de tu dispositivo.</p>
+        <div class="nfc-status-badge" id="nfcStatusBadge">
+            <span class="status-dot green"></span>
+            <span id="nfcStatusText">Lector NFC activo y listo</span>
+        </div>
+    </div>
+
+    <!-- Manual Action Card -->
+    <div class="card manual-card">
+        <h3>Búsqueda o Registro Manual</h3>
+        <p class="section-desc">Si el cliente olvidó su llavero o deseas registrar uno nuevo, usa las opciones siguientes:</p>
+        
+        <div class="search-form-group">
+            <div class="search-input-wrapper">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="manualSearchInput" placeholder="Buscar por Nombre, Teléfono o UID..." autocomplete="off">
+                <button type="button" class="clear-search-btn" id="clearSearchBtn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+
+        <!-- Live Search Results -->
+        <div class="search-results-list" id="searchResultsList" style="display: none;">
+            <!-- Rendered dynamically by JS -->
+        </div>
+
+        <div class="action-buttons-group">
+            <a href="{% url 'registrar_cliente' %}" class="btn-secondary">
+                <i class="fa-solid fa-keychain"></i>
+                <span>Activar Nuevo Llavero</span>
+            </a>
+            <a href="/admin/" target="_blank" class="btn-outline">
+                <i class="fa-solid fa-user-gear"></i>
+                <span>Panel de Administración</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- NFC SIMULATOR PANEL (Developer Tools) -->
+    <div class="card simulator-card">
+        <div class="simulator-header">
+            <i class="fa-solid fa-laptop-code"></i>
+            <h4>Simulador de Llaveros NFC (Modo de Prueba)</h4>
+        </div>
+        <p>Como las computadoras no tienen lector NFC físico, usa este panel para simular el acercamiento de un llavero:</p>
+        <div class="simulator-buttons">
+            <button type="button" class="btn-sim" onclick="simulateNfcScan('CRP-7A3F6B')">
+                <span class="sim-tag">Dante</span>
+                <span class="sim-uid">CRP-7A3F6B</span>
+            </button>
+            <button type="button" class="btn-sim btn-sim-new" onclick="simulateNfcScan('CRP-NEW' + Math.floor(Math.random()*9000 + 1000))">
+                <span class="sim-tag">Nuevo / No Registrado</span>
+                <span class="sim-uid">Escaneo Aleatorio</span>
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Web NFC API setup and simulation
+    document.addEventListener("DOMContentLoaded", function() {
+        const statusBadge = document.getElementById('nfcStatusBadge');
+        const statusText = document.getElementById('nfcStatusText');
+
+        // Check if Web NFC is supported
+        if ('NDEFReader' in window) {
+            statusBadge.classList.add('ready');
+            statusText.innerText = "Lector NFC Activo (Acerca un tag)";
+            
+            try {
+                const ndef = new NDEFReader();
+                ndef.scan().then(() => {
+                    ndef.onreadingerror = () => {
+                        console.error("Error al leer el tag NFC.");
+                        showFlashMessage("Error al leer el llavero. Intenta de nuevo.", "error");
+                    };
+                    ndef.onreading = ({ serialNumber }) => {
+                        // Translate serialNumber to format (uppercase) and redirect
+                        console.log("NFC Tag UID: " + serialNumber);
+                        const formatUID = serialNumber.replace(/:/g, '').toUpperCase();
+                        window.location.href = `/cliente/${formatUID}/`;
+                    };
+                }).catch(error => {
+                    console.warn("NFC scan failed to start: " + error);
+                    statusText.innerText = "NFC requiere interacción o permisos";
+                    statusBadge.querySelector('.status-dot').className = "status-dot orange";
+                });
+            } catch (err) {
+                console.error("NFC Error: ", err);
+            }
+        } else {
+            statusBadge.querySelector('.status-dot').className = "status-dot orange";
+            statusText.innerText = "NFC físico no soportado en este dispositivo. Usa el Simulador.";
+        }
+
+        // Setup manual search
+        const searchInput = document.getElementById('manualSearchInput');
+        const clearBtn = document.getElementById('clearSearchBtn');
+        const resultsList = document.getElementById('searchResultsList');
+
+        searchInput.addEventListener('input', function() {
+            const query = searchInput.value.trim();
+            if (query.length < 2) {
+                resultsList.style.display = 'none';
+                resultsList.innerHTML = '';
+                clearBtn.style.display = 'none';
+                return;
+            }
+
+            clearBtn.style.display = 'block';
+
+            // Fetch results
+            fetch(`/cliente/buscar/?q=${encodeURIComponent(query)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success' && data.results.length > 0) {
+                        resultsList.style.display = 'block';
+                        resultsList.innerHTML = '';
+                        data.results.forEach(client => {
+                            const div = document.createElement('div');
+                            div.className = 'search-result-item';
+                            div.innerHTML = `
+                                <div class="result-info">
+                                    <span class="result-name">${client.nombre}</span>
+                                    <span class="result-sub">${client.telefono ? client.telefono : 'Sin teléfono'} | UID: ${client.nfc_uid}</span>
+                                </div>
+                                <div class="result-badge">
+                                    <span class="badge-points">${client.crepipuntos} pts</span>
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </div>
+                            `;
+                            div.addEventListener('click', () => {
+                                window.location.href = client.url;
+                            });
+                            resultsList.appendChild(div);
+                        });
+                    } else {
+                        resultsList.style.display = 'block';
+                        resultsList.innerHTML = `<div class="no-results-found">No se encontraron clientes con: "${query}"</div>`;
+                    }
+                })
+                .catch(err => {
+                    console.error("Search Error: ", err);
+                });
+        });
+
+        clearBtn.addEventListener('click', function() {
+            searchInput.value = '';
+            resultsList.style.display = 'none';
+            resultsList.innerHTML = '';
+            clearBtn.style.display = 'none';
+        });
+    });
+
+    // NFC simulation function
+    function simulateNfcScan(uid) {
+        // Update UI to show successful NFC read animation
+        const scanCard = document.querySelector('.scan-card');
+        const scanIcon = document.getElementById('scanIcon');
+        const scanTitle = document.getElementById('scanTitle');
+        const scanSubtitle = document.getElementById('scanSubtitle');
+
+        scanCard.classList.add('scan-success');
+        if (scanIcon) {
+            scanIcon.className = "fa-solid fa-circle-check scan-icon animate-bounce";
+            scanIcon.style.color = "var(--success)";
+        }
+        if (scanTitle) scanTitle.innerText = "¡Lectura NFC Exitosa!";
+        if (scanSubtitle) scanSubtitle.innerText = `Llavero detectado: ${uid}`;
+
+        // Play beep sound if browser allows
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.value = 1200;
+            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            oscillator.start();
+            oscillator.stop(audioCtx.currentTime + 0.2);
+        } catch(e) {}
+
+        // Flash message and redirect
+        setTimeout(() => {
+            fetch(`/cliente/buscar/?q=${uid}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.status === 'success' && data.results.length > 0) {
+                        window.location.href = `/cliente/${uid}/`;
+                    } else {
+                        window.location.href = `/cliente/registrar/?nfc_uid=${uid}`;
+                    }
+                })
+                .catch(() => {
+                    window.location.href = `/cliente/${uid}/`;
+                });
+        }, 750);
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,115 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{% block title %}Café Rodante - Crepipuntos{% endblock %}</title>
+    <!-- Google Fonts: Outfit -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    <!-- Canvas Confetti CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- App Container -->
+    <div class="app-container">
+        {% if user.is_authenticated %}
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-left">
+                <button class="menu-btn" id="menuToggle"><i class="fa-solid fa-bars"></i></button>
+                <div class="brand">
+                    <i class="fa-solid fa-store logo-icon"></i>
+                    <span class="brand-name">Café Rodante</span>
+                </div>
+            </div>
+            <div class="header-right">
+                <div class="notifications">
+                    <i class="fa-regular fa-bell"></i>
+                    <span class="notification-badge">2</span>
+                </div>
+                <div class="user-profile">
+                    <span class="user-name">¡Hola, {{ user.first_name|default:user.username }}!</span>
+                    <a href="{% url 'logout' %}" class="logout-link" title="Cerrar sesión">
+                        <i class="fa-solid fa-right-from-bracket"></i>
+                    </a>
+                </div>
+            </div>
+        </header>
+
+        <!-- Sidebar / Drawer (Desktop/Tablet menu) -->
+        <aside class="app-sidebar" id="appSidebar">
+            <div class="sidebar-header">
+                <h3>Menú Rápido</h3>
+                <button class="close-sidebar" id="closeSidebar"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="{% url 'home' %}" class="{% if not cliente %}active{% endif %}">
+                    <i class="fa-solid fa-nfc-magnifying-glass"></i> Leer Llavero
+                </a>
+                <a href="{% url 'registrar_cliente' %}">
+                    <i class="fa-solid fa-keychain"></i> Activar Llavero
+                </a>
+                <a href="/admin/" target="_blank">
+                    <i class="fa-solid fa-user-gear"></i> Panel Admin
+                </a>
+            </nav>
+        </aside>
+        {% endif %}
+
+        <!-- Main Content Area -->
+        <main class="app-content">
+            {% if messages %}
+            <div class="messages-container">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}">
+                    <i class="fa-solid {% if message.tags == 'success' %}fa-circle-check{% elif message.tags == 'error' %}fa-circle-xmark{% else %}fa-circle-info{% endif %}"></i>
+                    <span>{{ message }}</span>
+                    <button class="close-alert" onclick="this.parentElement.remove()"><i class="fa-solid fa-xmark"></i></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% block content %}{% endblock %}
+        </main>
+
+        {% if user.is_authenticated and cliente %}
+        <!-- Bottom Sticky Navigation (Shown when viewing a customer) -->
+        <nav class="bottom-nav">
+            <a href="{% url 'cliente_dashboard' cliente.nfc_uid %}" class="nav-item {% if active_tab == 'inicio' %}active{% endif %}">
+                <i class="fa-solid fa-house"></i>
+                <span>Inicio</span>
+            </a>
+            <a href="{% url 'cliente_historial' cliente.nfc_uid %}" class="nav-item {% if active_tab == 'historial' %}active{% endif %}">
+                <i class="fa-solid fa-clock-rotate-left"></i>
+                <span>Historial</span>
+            </a>
+            <a href="{% url 'cliente_canjear' cliente.nfc_uid %}" class="nav-item {% if active_tab == 'canjear' %}active{% endif %}">
+                <i class="fa-solid fa-gift"></i>
+                <span>Canjear</span>
+            </a>
+            <a href="{% url 'cliente_perfil' cliente.nfc_uid %}" class="nav-item {% if active_tab == 'perfil' %}active{% endif %}">
+                <i class="fa-solid fa-user"></i>
+                <span>Perfil</span>
+            </a>
+            <a href="{% url 'home' %}" class="nav-item-exit" title="Escanear otro llavero">
+                <i class="fa-solid fa-nfc-symbol"></i>
+                <span>Escaneo</span>
+            </a>
+        </nav>
+        {% endif %}
+    </div>
+
+    <!-- Main JavaScript -->
+    <script src="{% static 'js/app.js' %}"></script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

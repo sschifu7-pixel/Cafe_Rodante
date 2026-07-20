@@ -1,0 +1,30 @@
+{% extends 'base.html' %}
+{% block title %}Llavero Bloqueado - Café Rodante{% endblock %}
+
+{% block content %}
+<div class="blocked-container">
+    <div class="card blocked-card">
+        <div class="blocked-icon-container">
+            <i class="fa-solid fa-lock blocked-icon"></i>
+        </div>
+        <h2 class="blocked-title">Llavero Bloqueado o Perdido</h2>
+        <p class="blocked-desc">
+            El llavero con UID <strong>{{ cliente.nfc_uid }}</strong> perteneciente a <strong>{{ cliente.nombre }}</strong> ha sido bloqueado en el sistema por motivos de seguridad (ej. reporte de pérdida).
+        </p>
+        <div class="blocked-info-alert">
+            <i class="fa-solid fa-circle-info"></i>
+            <span>No se pueden registrar compras ni canjear recompensas con este llavero. Por favor, solicita al administrador transferir el saldo a uno nuevo.</span>
+        </div>
+        <div class="blocked-actions">
+            <a href="{% url 'home' %}" class="btn-primary">
+                <i class="fa-solid fa-arrow-left"></i>
+                <span>Volver al Inicio</span>
+            </a>
+            <a href="/admin/recompensas/cliente/{{ cliente.id }}/change/" target="_blank" class="btn-outline">
+                <i class="fa-solid fa-user-gear"></i>
+                <span>Ver en Panel Admin</span>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

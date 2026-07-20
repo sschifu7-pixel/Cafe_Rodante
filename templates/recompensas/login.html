@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% block title %}Iniciar Sesión - Café Rodante{% endblock %}
+
+{% block content %}
+<div class="login-wrapper">
+    <div class="login-card">
+        <!-- Pantalla 1: Splash & Logo -->
+        <div class="welcome-animation-banner">
+            <div class="welcome-pulse-ring"></div>
+            <div class="company-logo-badge">
+                <i class="fa-solid fa-mug-hot"></i>
+            </div>
+        </div>
+
+        <div class="login-header">
+            <h2 class="brand-title">Café Rodante</h2>
+            <span class="sub-badge">Sistema de Recompensas</span>
+            <p class="login-section-title"><i class="fa-solid fa-user-shield"></i> Inicio de Sesión del Empleado</p>
+        </div>
+
+        <form method="post" action="{% url 'login' %}" class="login-form">
+            {% csrf_token %}
+            
+            {% if form.errors %}
+            <div class="form-errors">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                <span>Usuario o contraseña incorrectos.</span>
+            </div>
+            {% endif %}
+
+            <div class="form-group">
+                <label for="id_username"><i class="fa-solid fa-user"></i> Usuario</label>
+                <input type="text" name="username" id="id_username" placeholder="Nombre de usuario" required autocomplete="username">
+            </div>
+
+            <div class="form-group">
+                <label for="id_password"><i class="fa-solid fa-lock"></i> Contraseña</label>
+                <div class="password-input-container">
+                    <input type="password" name="password" id="id_password" placeholder="••••••••" required autocomplete="current-password">
+                    <button type="button" class="toggle-password" onclick="togglePasswordVisibility()"><i class="fa-regular fa-eye"></i></button>
+                </div>
+            </div>
+
+            <button type="submit" class="btn-primary btn-block">
+                <span>Ingresar al Turno</span>
+                <i class="fa-solid fa-right-to-bracket"></i>
+            </button>
+        </form>
+        
+        <div class="login-footer">
+            <p>Café Rodante © 2026</p>
+            <p class="demo-info">Prueba: admin / admin123</p>
+        </div>
+    </div>
+</div>
+
+<script>
+function togglePasswordVisibility() {
+    const passwordInput = document.getElementById('id_password');
+    const icon = document.querySelector('.toggle-password i');
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        icon.className = 'fa-regular fa-eye-slash';
+    } else {
+        passwordInput.type = 'password';
+        icon.className = 'fa-regular fa-eye';
+    }
+}
+</script>
+{% endblock %}

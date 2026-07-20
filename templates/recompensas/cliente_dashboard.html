@@ -1,0 +1,358 @@
+{% extends 'base.html' %}
+{% block title %}Dashboard: {{ cliente.nombre }} - Café Rodante{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    
+    <!-- User Overview Card -->
+    <div class="client-profile-header">
+        <div class="profile-avatar">
+            <i class="fa-solid fa-user"></i>
+        </div>
+        <div class="profile-details">
+            <h2>¡Hola, {{ cliente.nombre }}!</h2>
+            <span class="client-id-badge">ID: {{ cliente.nfc_uid }}</span>
+        </div>
+    </div>
+
+    <!-- Puntos Card (mockup style) -->
+    <div class="points-card">
+        <div class="points-card-inner">
+            <div class="points-info">
+                <span class="card-label">CREPIPUNTOS</span>
+                <span class="points-count" id="currentPointsBalance">{{ cliente.crepipuntos }}</span>
+                <span class="points-unit">puntos</span>
+            </div>
+            
+            <div class="progress-ring-container">
+                <!-- SVG Circle Progress Ring -->
+                <svg class="progress-ring" width="100" height="100">
+                    <circle class="progress-ring-bg" stroke="rgba(255,255,255,0.2)" stroke-width="8" fill="transparent" r="40" cx="50" cy="50"/>
+                    <circle class="progress-ring-bar" id="progressRingBar" stroke="#ffffff" stroke-width="8" fill="transparent" r="40" cx="50" cy="50"
+                            stroke-dasharray="251.2" stroke-dashoffset="{{ 251.2|add:0 }}"/>
+                </svg>
+                <div class="progress-ring-text">
+                    {% if faltan_puntos > 0 %}
+                    <span class="text-top">faltan</span>
+                    <span class="text-number" id="missingPointsText">{{ faltan_puntos }}</span>
+                    <span class="text-bottom">puntos</span>
+                    {% else %}
+                    <span class="text-top"><i class="fa-solid fa-gift animate-bounce"></i></span>
+                    <span class="text-number" style="font-size: 14px;">Listo</span>
+                    <span class="text-bottom">Canjea</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="points-card-footer">
+            <i class="fa-solid fa-gift gift-icon"></i>
+            <span id="pointsFooterMessage">
+                {% if faltan_puntos > 0 %}
+                Te faltan {{ faltan_puntos }} puntos para tu producto gratis.
+                {% else %}
+                ¡Felicidades! Tienes recompensas disponibles para canjear.
+                {% endif %}
+            </span>
+        </div>
+    </div>
+
+    <!-- Interactive Purchase Area -->
+    <div class="purchase-grid">
+        <!-- Catalog / Select Products -->
+        <div class="card catalog-card">
+            <div class="card-header">
+                <h3><i class="fa-solid fa-mug-hot"></i> Registrar Productos</h3>
+                <span class="helper-text">Agrega productos al pedido actual</span>
+            </div>
+            <div class="products-grid">
+                {% for prod in productos %}
+                <div class="product-item" id="product-{{ prod.id }}" data-id="{{ prod.id }}" data-nombre="{{ prod.nombre }}" data-precio="{{ prod.precio }}" data-puntos="{{ prod.puntos_que_otorga }}">
+                    <div class="product-info">
+                        <span class="product-name">{{ prod.nombre }}</span>
+                        <div class="product-meta">
+                            <span class="product-price">${{ prod.precio }}</span>
+                            <span class="product-points">+{{ prod.puntos_que_otorga }} pts</span>
+                        </div>
+                    </div>
+                    <div class="product-actions">
+                        <button type="button" class="btn-qty btn-minus" onclick="handleQtyChange(this, -1)">
+                            <i class="fa-solid fa-minus"></i>
+                        </button>
+                        <span class="qty-display" id="qty-{{ prod.id }}">0</span>
+                        <button type="button" class="btn-qty btn-plus" onclick="handleQtyChange(this, 1)">
+                            <i class="fa-solid fa-plus"></i>
+                        </button>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="no-products">No hay productos disponibles en el catálogo.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Current Order / Checkout (Mockup style) -->
+        <div class="card order-card">
+            <div class="card-header flex-header">
+                <h3>Compra actual</h3>
+                <button class="btn-text" onclick="clearOrder()"><i class="fa-solid fa-trash-can"></i> Limpiar</button>
+            </div>
+
+            <!-- Selected Items list -->
+            <div class="order-items-list" id="orderItemsList">
+                <div class="empty-order-placeholder">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <p>Agrega productos del catálogo para registrar la compra.</p>
+                </div>
+            </div>
+
+            <div class="order-summary">
+                <div class="summary-row">
+                    <span>Total productos:</span>
+                    <strong id="summaryTotalProducts">0</strong>
+                </div>
+                <div class="summary-row points-row">
+                    <span>Puntos a generar:</span>
+                    <strong id="summaryPointsGenerated">+0 pts</strong>
+                </div>
+                <div class="summary-row total-row">
+                    <span>Total a pagar:</span>
+                    <strong id="summaryTotalPrice">$0.00</strong>
+                </div>
+            </div>
+
+            <button type="button" class="btn-primary btn-block" id="confirmPurchaseBtn" disabled onclick="submitPurchase()">
+                <span>Confirmar Compra</span>
+                <i class="fa-solid fa-circle-check"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Next Reward Card (mockup style) -->
+    <div class="card next-reward-card">
+        <div class="next-reward-content">
+            <div class="reward-text">
+                <span class="reward-lbl">Próxima recompensa</span>
+                <h4 class="reward-title">{% if siguiente_recompensa %}{{ siguiente_recompensa.nombre }}{% else %}Producto gratis{% endif %}</h4>
+                <span class="reward-pts">{% if siguiente_recompensa %}{{ siguiente_recompensa.puntos_requeridos }}{% else %}20{% endif %} puntos</span>
+            </div>
+            <div class="reward-image-container">
+                <!-- Fallback premium icon or image -->
+                <i class="fa-solid fa-ice-cream reward-icon-placeholder animate-bounce"></i>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // State management for order
+    const orderItems = {};
+    const clientUid = "{{ cliente.nfc_uid }}";
+    const percent = parseFloat("{{ porcentaje|default:0 }}") || 0;
+    
+    function handleQtyChange(btn, change) {
+        const card = btn.closest('.product-item');
+        const id = card.dataset.id;
+        const name = card.dataset.nombre;
+        const price = parseFloat(card.dataset.precio || '0');
+        const points = parseInt(card.dataset.puntos || '0', 10);
+        updateQty(id, change, name, price, points);
+    }
+    
+    // Config SVG progress ring
+    document.addEventListener("DOMContentLoaded", function() {
+        setProgress(percent);
+    });
+
+    function setProgress(percent) {
+        const circle = document.getElementById('progressRingBar');
+        const radius = circle.r.baseVal.value;
+        const circumference = 2 * Math.PI * radius; // 251.2
+        
+        // Ensure percent is between 0 and 100
+        percent = Math.min(Math.max(percent, 0), 100);
+        
+        const offset = circumference - (percent / 100) * circumference;
+        circle.style.strokeDashoffset = offset;
+    }
+
+    function updateQty(id, change, name = '', price = 0, points = 0) {
+        const qtyEl = document.getElementById(`qty-${id}`);
+        let currentQty = parseInt(qtyEl.innerText);
+        let newQty = currentQty + change;
+        
+        if (newQty < 0) return;
+        
+        qtyEl.innerText = newQty;
+        
+        if (newQty === 0) {
+            delete orderItems[id];
+        } else {
+            orderItems[id] = {
+                id: id,
+                nombre: name,
+                precio: price,
+                puntos: points,
+                cantidad: newQty
+            };
+        }
+        
+        renderOrder();
+    }
+
+    function renderOrder() {
+        const listEl = document.getElementById('orderItemsList');
+        const confirmBtn = document.getElementById('confirmPurchaseBtn');
+        const totalProductsEl = document.getElementById('summaryTotalProducts');
+        const pointsGeneratedEl = document.getElementById('summaryPointsGenerated');
+        const totalPriceEl = document.getElementById('summaryTotalPrice');
+        
+        const keys = Object.keys(orderItems);
+        
+        if (keys.length === 0) {
+            listEl.innerHTML = `
+                <div class="empty-order-placeholder">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                    <p>Agrega productos del catálogo para registrar la compra.</p>
+                </div>
+            `;
+            confirmBtn.disabled = true;
+            totalProductsEl.innerText = '0';
+            pointsGeneratedEl.innerText = '+0 pts';
+            totalPriceEl.innerText = '$0.00';
+            return;
+        }
+        
+        listEl.innerHTML = '';
+        confirmBtn.disabled = false;
+        
+        let totalQty = 0;
+        let totalPoints = 0;
+        let totalCost = 0.00;
+        
+        keys.forEach(id => {
+            const item = orderItems[id];
+            totalQty += item.cantidad;
+            totalPoints += (item.puntos * item.cantidad);
+            totalCost += (item.precio * item.cantidad);
+            
+            const div = document.createElement('div');
+            div.className = 'order-item-row';
+            div.innerHTML = `
+                <div class="item-name-qty">
+                    <span class="item-qty">${item.cantidad}x</span>
+                    <span class="item-name">${item.nombre}</span>
+                </div>
+                <div class="item-points-price">
+                    <span class="item-points">+${item.puntos * item.cantidad} pts</span>
+                    <span class="item-price">$${(item.precio * item.cantidad).toFixed(2)}</span>
+                </div>
+            `;
+            listEl.appendChild(div);
+        });
+        
+        totalProductsEl.innerText = totalQty;
+        pointsGeneratedEl.innerText = `+${totalPoints} pts`;
+        totalPriceEl.innerText = `$${totalCost.toFixed(2)}`;
+    }
+
+    function clearOrder() {
+        Object.keys(orderItems).forEach(id => {
+            const qtyEl = document.getElementById(`qty-${id}`);
+            if (qtyEl) qtyEl.innerText = '0';
+            delete orderItems[id];
+        });
+        renderOrder();
+    }
+
+    function submitPurchase() {
+        const btn = document.getElementById('confirmPurchaseBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<span>Registrando...</span> <i class="fa-solid fa-spinner fa-spin"></i>';
+        
+        const itemsList = Object.values(orderItems).map(item => ({
+            id: item.id,
+            cantidad: item.cantidad
+        }));
+
+        fetch(`/cliente/${clientUid}/registrar-compra/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({ items: itemsList })
+        })
+        .then(res => res.json())
+        .then(data => {
+            if (data.status === 'success') {
+                // Fire confetti!
+                confetti({
+                    particleCount: 150,
+                    spread: 80,
+                    origin: { y: 0.6 }
+                });
+                
+                // Show custom success modal or alert
+                showFlashMessage(`¡Compra registrada! +${data.puntos_ganados} Crepipuntos ganados.`, 'success');
+                
+                // Update UI elements
+                document.getElementById('currentPointsBalance').innerText = data.nuevo_saldo;
+                
+                // Update progress ring and text
+                const reqPoints = parseInt("{{ puntos_requeridos|default:0 }}", 10) || 0;
+                let missing = reqPoints - data.nuevo_saldo;
+                let newPercent = reqPoints > 0 ? Math.floor((data.nuevo_saldo / reqPoints) * 100) : 0;
+                
+                if (missing > 0) {
+                    document.getElementById('missingPointsText').innerText = missing;
+                    document.getElementById('pointsFooterMessage').innerText = `Te faltan ${missing} puntos para tu producto gratis.`;
+                    setProgress(newPercent);
+                } else {
+                    const ringText = document.querySelector('.progress-ring-text');
+                    ringText.innerHTML = `
+                        <span class="text-top"><i class="fa-solid fa-gift animate-bounce"></i></span>
+                        <span class="text-number" style="font-size: 14px;">Listo</span>
+                        <span class="text-bottom">Canjea</span>
+                    `;
+                    document.getElementById('pointsFooterMessage').innerText = "¡Felicidades! Tienes recompensas disponibles para canjear.";
+                    setProgress(100);
+                }
+                
+                // Clear order builder
+                clearOrder();
+                
+                // Set button back
+                btn.innerHTML = '<span>Confirmar Compra</span> <i class="fa-solid fa-circle-check"></i>';
+            } else {
+                showFlashMessage(data.message, 'error');
+                btn.innerHTML = '<span>Confirmar Compra</span> <i class="fa-solid fa-circle-check"></i>';
+                btn.disabled = false;
+            }
+        })
+        .catch(err => {
+            console.error(err);
+            showFlashMessage('Error de conexión. Intente más tarde.', 'error');
+            btn.innerHTML = '<span>Confirmar Compra</span> <i class="fa-solid fa-circle-check"></i>';
+            btn.disabled = false;
+        });
+    }
+
+    // CSRF helper
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+</script>
+{% endblock %}

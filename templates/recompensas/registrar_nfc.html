@@ -25,7 +25,16 @@
                         <i class="fa-solid fa-microchip"></i> Grabar en Llavero
                     </button>
                 </div>
-                <span class="form-help-text" id="nfcFormHelpText">ID asignado automáticamente: <strong>{{ siguiente_uid }}</strong>. En Android graba por NFC; en iOS confirma directamente.</span>
+                <span class="form-help-text" id="nfcFormHelpText">ID asignado automáticamente: <strong>{{ siguiente_uid }}</strong>. En Android graba por NFC; en iOS usa el Atajo o confirma directamente.</span>
+
+                <div class="ios-shortcut-panel" id="iosWriteShortcutPanel" style="display: none; margin-top: 12px;">
+                    <button type="button" class="btn-primary btn-block" onclick="runIOSWriteShortcut()">
+                        <i class="fa-solid fa-mobile-screen-button"></i> Grabar ID {{ siguiente_uid }} con iPhone
+                    </button>
+                    <button type="button" class="btn-text" style="margin-top: 6px; font-size: 13px;" onclick="openIOSWriteModal()">
+                        <i class="fa-solid fa-circle-question"></i> ¿Cómo configurar el atajo GrabarNFC en iPhone?
+                    </button>
+                </div>
             </div>
 
             <div class="form-group">
@@ -49,10 +58,37 @@
         </form>
     </div>
 </div>
+
+<!-- Modal instructivo Atajo GrabarNFC en iOS -->
+<div class="modal-overlay" id="iosWriteModal" style="display: none;">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3><i class="fa-brands fa-apple"></i> Configurar Atajo GrabarNFC en iPhone</h3>
+            <button class="close-modal" onclick="closeIOSWriteModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <p>Para grabar el ID autoincrementado en el llavero físico desde tu iPhone:</p>
+            <ol class="ios-steps-list">
+                <li>Abre la app <strong>Atajos</strong> en tu iPhone y pulsa <strong>+</strong>.</li>
+                <li>Nombra el atajo como: <code>GrabarNFC</code></li>
+                <li>En la configuración del atajo, activa: <strong>"Mostrar en hoja de compartir / Recibir entrada"</strong>.</li>
+                <li>Agrega la acción: <strong>Grabar en etiqueta NFC</strong> (*Write NFC Tag*) y selecciona como contenido: <code>Entrada de atajo</code>.</li>
+            </ol>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 12px;">¡Listo! Después de esto, al tocar <strong>"Grabar ID con iPhone"</strong> lanzará la escritura física en la memoria del llavero.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-primary btn-block" onclick="closeIOSWriteModal()">Entendido</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
+    function isIOSDevice() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
     document.addEventListener("DOMContentLoaded", function() {
         const urlParams = new URLSearchParams(window.location.search);
         const uidParam = urlParams.get('nfc_uid');
@@ -60,18 +96,29 @@
             document.getElementById('id_nfc_uid').value = uidParam.toUpperCase();
         }
         
-        // Detect iOS / Non-Web-NFC environment
-        if (!('NDEFReader' in window)) {
-            const btn = document.getElementById('btnNfcScanForm');
+        // Detect iOS environment
+        if (isIOSDevice() || !('NDEFReader' in window)) {
+            const iosPanel = document.getElementById('iosWriteShortcutPanel');
             const helpText = document.getElementById('nfcFormHelpText');
-            if (btn) {
-                btn.innerHTML = '<i class="fa-solid fa-check"></i> Usar ID Asignado';
-            }
+            if (iosPanel) iosPanel.style.display = 'block';
             if (helpText) {
-                helpText.innerHTML = 'En iOS / Safari: El ID <strong>' + (document.getElementById('id_nfc_uid').value || '{{ siguiente_uid }}') + '</strong> está listo. Completa los datos y presiona "Activar Llavero".';
+                helpText.innerHTML = 'En iOS: Usa el atajo para grabar físicamente el ID <strong>' + (document.getElementById('id_nfc_uid').value || '{{ siguiente_uid }}') + '</strong> o completa los datos y activa directamente.';
             }
         }
     });
+
+    function runIOSWriteShortcut() {
+        const targetId = document.getElementById('id_nfc_uid').value || "{{ siguiente_uid }}";
+        window.location.href = "shortcuts://run-shortcut?name=GrabarNFC&input=" + encodeURIComponent(targetId);
+    }
+
+    function openIOSWriteModal() {
+        document.getElementById('iosWriteModal').style.display = 'flex';
+    }
+
+    function closeIOSWriteModal() {
+        document.getElementById('iosWriteModal').style.display = 'none';
+    }
 
     async function startFormNfcScan() {
         const uidInput = document.getElementById('id_nfc_uid');
@@ -80,7 +127,11 @@
         const targetId = uidInput.value || "{{ siguiente_uid }}";
 
         if (!('NDEFReader' in window)) {
-            showFlashMessage(`En iOS se utilizará el ID asignado: ${targetId}. Presiona "Activar Llavero" para guardar.`, 'info');
+            if (isIOSDevice()) {
+                runIOSWriteShortcut();
+            } else {
+                showFlashMessage(`El ID asignado ${targetId} se utilizará para guardar. Presiona "Activar Llavero".`, 'info');
+            }
             return;
         }
 

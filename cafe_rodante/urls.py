@@ -17,7 +17,7 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from django.contrib.auth import views as auth_views
-from recompensas.views import _inicializar_datos_demo
+from recompensas.views import _inicializar_datos_demo, logout_view
 
 
 class DemoLoginView(auth_views.LoginView):
@@ -31,7 +31,8 @@ class DemoLoginView(auth_views.LoginView):
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('login/', DemoLoginView.as_view(), name='login'),
-    path('logout/', auth_views.LogoutView.as_view(next_page='login'), name='logout'),
+    path('logout/', logout_view, name='logout'),
     path('', include('recompensas.urls')),
 ]
+
 

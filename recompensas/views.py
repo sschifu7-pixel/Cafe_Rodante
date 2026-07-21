@@ -10,13 +10,22 @@ from django.core.exceptions import ValidationError
 import json
 from decimal import Decimal
 
+from django.contrib.auth import logout as auth_logout
+
 from .models import Cliente, Producto, Venta, DetalleVenta, Recompensa, MovimientoPuntos
+
+
+def logout_view(request):
+    """Cerrar sesión de forma segura y redirigir a la pantalla de login."""
+    auth_logout(request)
+    return redirect('login')
 
 
 def _inicializar_datos_demo():
     """Poblar datos iniciales de demostración en caso de que la base de datos esté vacía."""
     from .apps import crear_datos_iniciales
     crear_datos_iniciales(None)
+
 
 
 

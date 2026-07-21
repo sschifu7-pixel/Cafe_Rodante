@@ -45,32 +45,12 @@
                 <span>Activar Nuevo Llavero</span>
             </a>
         </div>
-    </div>
-
-    <!-- NFC SIMULATOR PANEL (Developer Tools) -->
-    <div class="card simulator-card">
-        <div class="simulator-header">
-            <i class="fa-solid fa-laptop-code"></i>
-            <h4>Simulador de Llaveros NFC (Modo de Prueba)</h4>
-        </div>
-        <p>Como las computadoras no tienen lector NFC físico, usa este panel para simular la lectura del ID en memoria (addr.05):</p>
-        <div class="simulator-buttons">
-            <button type="button" class="btn-sim" onclick="simulateNfcScan('00:00:00:01')">
-                <span class="sim-tag">Dante</span>
-                <span class="sim-uid">00:00:00:01 (addr.05)</span>
-            </button>
-            <button type="button" class="btn-sim btn-sim-new" onclick="simulateNfcScan('00:00:00:99')">
-                <span class="sim-tag">Nuevo / No Registrado</span>
-                <span class="sim-uid">00:00:00:99 (addr.05)</span>
-            </button>
-        </div>
-    </div>
-</div>
+    </div></div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Web NFC API setup and simulation
+    // Web NFC API setup
     document.addEventListener("DOMContentLoaded", function() {
         const statusBadge = document.getElementById('nfcStatusBadge');
         const statusText = document.getElementById('nfcStatusText');
@@ -103,7 +83,7 @@
                         }
                         const finalId = memoryId || serialNumber.replace(/:/g, '').toUpperCase();
                         console.log("Memory Addr.05 ID: " + finalId);
-                        simulateNfcScan(finalId);
+                        handleNfcScanResult(finalId);
                     };
                 }).catch(error => {
                     console.warn("NFC scan failed to start: " + error);
@@ -115,9 +95,8 @@
             }
         } else {
             statusBadge.querySelector('.status-dot').className = "status-dot orange";
-            statusText.innerText = "NFC físico no soportado en este dispositivo. Usa el Simulador.";
+            statusText.innerText = "NFC físico no soportado en este dispositivo. Usa la búsqueda manual.";
         }
-
 
         // Setup manual search
         const searchInput = document.getElementById('manualSearchInput');
@@ -148,7 +127,7 @@
                             div.innerHTML = `
                                 <div class="result-info">
                                     <span class="result-name">${client.nombre}</span>
-                                    <span class="result-sub">${client.telefono ? client.telefono : 'Sin teléfono'} | UID: ${client.nfc_uid}</span>
+                                    <span class="result-sub">${client.telefono ? client.telefono : 'Sin teléfono'} | ID: ${client.nfc_uid}</span>
                                 </div>
                                 <div class="result-badge">
                                     <span class="badge-points">${client.crepipuntos} pts</span>
@@ -178,8 +157,8 @@
         });
     });
 
-    // NFC simulation function
-    function simulateNfcScan(uid) {
+    // NFC scan result handler
+    function handleNfcScanResult(uid) {
         // Update UI to show successful NFC read animation
         const scanCard = document.querySelector('.scan-card');
         const scanIcon = document.getElementById('scanIcon');
@@ -196,7 +175,6 @@
 
         // Play beep sound if browser allows
         playBeepSound();
-
 
         // Flash message and redirect
         setTimeout(() => {

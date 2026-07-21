@@ -15,8 +15,12 @@ from .models import Cliente, Producto, Venta, DetalleVenta, Recompensa, Movimien
 
 def _inicializar_datos_demo():
     """Poblar datos iniciales de demostración en caso de que la base de datos esté vacía."""
-    if User.objects.filter(is_superuser=True).count() == 0:
-        User.objects.create_superuser('admin', 'admin@caferodante.com', 'admin123', first_name='Empleado')
+    try:
+        if User.objects.filter(is_superuser=True).count() == 0:
+            User.objects.create_superuser('admin', 'admin@caferodante.com', 'admin123', first_name='Empleado')
+    except Exception:
+        return
+
 
     if Producto.objects.count() == 0:
 

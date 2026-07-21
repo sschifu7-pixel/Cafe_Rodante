@@ -1,2 +1,3 @@
-web: gunicorn cafe_rodante.wsgi:application
+web: python manage.py migrate && gunicorn cafe_rodante.wsgi:application
+
 

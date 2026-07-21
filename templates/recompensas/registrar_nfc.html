@@ -49,16 +49,6 @@
         </form>
     </div>
 
-    <!-- Developer NFC Simulator helper for registration -->
-    <div class="card simulator-card">
-        <div class="simulator-header">
-            <i class="fa-solid fa-laptop-code"></i>
-            <h4>Simulador para Registro (Modo de Prueba)</h4>
-        </div>
-        <p>Simula la asignación y grabación del ID autoincrementable (addr.05) en un llavero nuevo:</p>
-        <button type="button" class="btn-sim-full" onclick="simulateRegistrationScan()">
-            <i class="fa-solid fa-microchip"></i> Simular Grabación de ID {{ siguiente_uid }} en Llavero
-        </button>
     </div>
 </div>
 {% endblock %}
@@ -80,7 +70,7 @@
         const targetId = uidInput.value || "{{ siguiente_uid }}";
 
         if (!('NDEFReader' in window)) {
-            showFlashMessage('La lectura/escritura NFC física no es soportada en este navegador. Usa el simulador de abajo.', 'error');
+            showFlashMessage('NFC físico no disponible en este dispositivo/navegador. El ID de memoria asignado se guardará al enviar.', 'info');
             return;
         }
 
@@ -109,16 +99,6 @@
             helpText.style.color = "red";
             showFlashMessage('Error al escribir en el llavero NFC: ' + error.message, 'error');
         }
-    }
-
-    function simulateRegistrationScan() {
-        const targetId = document.getElementById('id_nfc_uid').value || "{{ siguiente_uid }}";
-        const helpText = document.getElementById('nfcFormHelpText');
-        helpText.innerText = `Simulación exitosa: ID ${targetId} listo para registrar en addr.05`;
-        helpText.style.color = "var(--success)";
-        
-        showFlashMessage(`ID ${targetId} asignado correctamente.`, 'success');
-        playBeepSound();
     }
 </script>
 {% endblock %}

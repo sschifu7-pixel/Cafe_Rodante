@@ -77,3 +77,42 @@ function showFlashMessage(message, type = 'info') {
         }, 400);
     }, 4000);
 }
+
+/**
+ * Gets a cookie value by name (e.g. csrftoken)
+ * @param {string} name 
+ * @returns {string|null}
+ */
+function getCookie(name) {
+    let cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+            const cookie = cookies[i].trim();
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
+
+/**
+ * Plays a short audio feedback beep on NFC scan or action
+ */
+function playBeepSound() {
+    try {
+        const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.value = 1200;
+        gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
+        oscillator.start();
+        oscillator.stop(audioCtx.currentTime + 0.15);
+    } catch(e) {}
+}
+

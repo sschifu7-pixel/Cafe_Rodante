@@ -1,19 +1,25 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.models import User
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from django.contrib import messages
 from django.db import transaction
+from django.db.models import Q
 from django.core.exceptions import ValidationError
 import json
 from decimal import Decimal
 
 from .models import Cliente, Producto, Venta, DetalleVenta, Recompensa, MovimientoPuntos
 
-@login_required
-def home(request):
-    # Auto-poblar catálogo de prueba si la base de datos está vacía
+
+def _inicializar_datos_demo():
+    """Poblar datos iniciales de demostración en caso de que la base de datos esté vacía."""
+    if User.objects.filter(is_superuser=True).count() == 0:
+        User.objects.create_superuser('admin', 'admin@caferodante.com', 'admin123', first_name='Empleado')
+
     if Producto.objects.count() == 0:
+
         Producto.objects.create(nombre="Crepa Clásica", precio=Decimal("45.00"), puntos_que_otorga=2, stock=150)
         Producto.objects.create(nombre="Frappé Oreo", precio=Decimal("55.00"), puntos_que_otorga=2, stock=120)
         Producto.objects.create(nombre="Espresso Americano", precio=Decimal("30.00"), puntos_que_otorga=2, stock=200)
@@ -25,7 +31,6 @@ def home(request):
         Recompensa.objects.create(nombre="Playera Edición Café Rodante", puntos_requeridos=60, activa=True)
         Recompensa.objects.create(nombre="Termo Metálico Café Rodante", puntos_requeridos=100, activa=True)
 
-    # Crear cliente de prueba "Dante" si no existe
     if Cliente.objects.count() == 0:
         dante = Cliente.objects.create(
             nombre="Dante",
@@ -34,47 +39,22 @@ def home(request):
             cumpleanos="1995-06-12",
             estado="activo"
         )
-        # Log welcome points +2
+        MovimientoPuntos.objects.create(cliente=dante, tipo="acumulacion", cantidad=2, referencia="Regalo de bienvenida")
+        MovimientoPuntos.objects.create(cliente=dante, tipo="acumulacion", cantidad=6, referencia="Compra registrada - Venta de prueba 1")
+        MovimientoPuntos.objects.create(cliente=dante, tipo="acumulacion", cantidad=14, referencia="Compra registrada - Venta de prueba 2")
         MovimientoPuntos.objects.create(
-            cliente=dante,
-            tipo="acumulacion",
-            cantidad=2,
-            referencia="Regalo de bienvenida"
-        )
-        # Add some initial movements for Dante to match the mockup
-        # Dante has 18 points total. Initial welcome was 2. Let's add more movements:
-        # Compra 1: +4 pts (2 productos)
-        # Compra 2: +6 pts (3 productos)
-        # Canje 1: -20 pts (canjeado)
-        # Compra 3: +4 pts (2 productos)
-        # Compra 4: +22 pts (11 productos) -> Wait, let's just make it sum up to 18.
-        # e.g., +2 welcome, +6 purchase, +14 purchase, -20 redemption, +16 purchase = 18 pts
-        m1 = MovimientoPuntos.objects.create(
-            cliente=dante,
-            tipo="acumulacion",
-            cantidad=6,
-            referencia="Compra registrada - Venta de prueba 1"
-        )
-        m2 = MovimientoPuntos.objects.create(
-            cliente=dante,
-            tipo="acumulacion",
-            cantidad=14,
-            referencia="Compra registrada - Venta de prueba 2"
-        )
-        m3 = MovimientoPuntos.objects.create(
             cliente=dante,
             tipo="canje",
             cantidad=-20,
             referencia="Recompensa utilizada - Producto gratis",
             recompensa=Recompensa.objects.first()
         )
-        m4 = MovimientoPuntos.objects.create(
-            cliente=dante,
-            tipo="acumulacion",
-            cantidad=16,
-            referencia="Compra registrada - Venta de prueba 3"
-        )
+        MovimientoPuntos.objects.create(cliente=dante, tipo="acumulacion", cantidad=16, referencia="Compra registrada - Venta de prueba 3")
 
+
+@login_required
+def home(request):
+    _inicializar_datos_demo()
     return render(request, 'recompensas/home.html')
 
 
@@ -83,27 +63,26 @@ def buscar_cliente(request):
     query = request.GET.get('q', '').strip()
     if not query:
         return JsonResponse({'status': 'error', 'message': 'Consulta vacía'}, status=400)
-    
-    # Buscar por UID exacto, nombre contiene o teléfono contiene
-  #  clientes = Cliente.objects.filter(
-  #      models.Q(nfc_uid__iexact=query) |
- #       models.Q(nombre__icontains=query) |
-  #      models.Q(telefono__contains=query)
-  #  )
-    
-    # Si es una llamada AJAX de búsqueda
- #   results = []
-  #  for c in clientes:
-  #      results.append({
-  #           'nombre': c.nombre,
-  #           'nfc_uid': c.nfc_uid,
-  #           'telefono': c.telefono or '',
-  #           'crepipuntos': c.crepipuntos,
-  #           'estado': c.estado,
-  #           'url': f"/cliente/{c.nfc_uid}/"
-  #       })
-        
-  #  return JsonResponse({'status': 'success', 'results': results})
+
+    clientes = Cliente.objects.filter(
+        Q(nfc_uid__iexact=query) |
+        Q(nombre__icontains=query) |
+        Q(telefono__contains=query)
+    )
+
+    results = [
+        {
+            'nombre': c.nombre,
+            'nfc_uid': c.nfc_uid,
+            'telefono': c.telefono or '',
+            'crepipuntos': c.crepipuntos,
+            'estado': c.estado,
+            'url': f"/cliente/{c.nfc_uid}/"
+        }
+        for c in clientes
+    ]
+
+    return JsonResponse({'status': 'success', 'results': results})
 
 
 @login_required

@@ -1,6 +1,7 @@
 *.pyc
 __pycache__/
 db.sqlite3
+staticfiles/
 .env
 .venv/
 env/
@@ -8,3 +9,4 @@ venv/
 *.log
 .DS_Store
 Thumbs.db
+

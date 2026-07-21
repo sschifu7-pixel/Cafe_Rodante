@@ -11,7 +11,8 @@
             </div>
             <h2 class="profile-name">{{ cliente.nombre }}</h2>
             <span class="client-id-badge"><i class="fa-solid fa-nfc-symbol"></i> NFC UID: {{ cliente.nfc_uid }}</span>
-            <span class="client-status-badge status-{{ cliente.estado }}"><i class="fa-solid fa-circle-check"></i> {{ cliente.get_estado_display }}</span>
+            <span class="client-status-badge status-{{ cliente.estado }}"><i class="fa-solid fa-circle-check"></i> {{
+                cliente.get_estado_display }}</span>
         </div>
 
         <div class="profile-stats-grid">
@@ -47,7 +48,8 @@
                 <div class="detail-icon"><i class="fa-solid fa-cake-candles"></i></div>
                 <div class="detail-content">
                     <span class="detail-label">Cumpleaños</span>
-                    <span class="detail-value">{% if cliente.cumpleanos %}{{ cliente.cumpleanos|date:"d \d\e F" }}{% else %}No registrado{% endif %}</span>
+                    <span class="detail-value">{% if cliente.cumpleanos %}{{ cliente.cumpleanos|date:"d \d\e F" }}{%
+                        else %}No registrado{% endif %}</span>
                 </div>
             </div>
             <div class="detail-item">

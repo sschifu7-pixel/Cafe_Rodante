@@ -186,18 +186,8 @@
         if (scanSubtitle) scanSubtitle.innerText = `Llavero detectado: ${uid}`;
 
         // Play beep sound if browser allows
-        try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            oscillator.type = 'sine';
-            oscillator.frequency.value = 1200;
-            gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-            oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 0.2);
-        } catch(e) {}
+        playBeepSound();
+
 
         // Flash message and redirect
         setTimeout(() => {

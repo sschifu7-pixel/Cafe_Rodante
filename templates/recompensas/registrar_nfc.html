@@ -141,20 +141,6 @@
         showFlashMessage(`Llavero simulado: ${randId}`, 'success');
         playBeepSound();
     }
-
-    function playBeepSound() {
-        try {
-            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            oscillator.connect(gainNode);
-            gainNode.connect(audioCtx.destination);
-            oscillator.type = 'sine';
-            oscillator.frequency.value = 1200;
-            gainNode.gain.setValueAtTime(0.08, audioCtx.currentTime);
-            oscillator.start();
-            oscillator.stop(audioCtx.currentTime + 0.12);
-        } catch(e) {}
-    }
 </script>
 {% endblock %}
+

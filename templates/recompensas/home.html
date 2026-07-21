@@ -57,15 +57,15 @@
             <i class="fa-solid fa-laptop-code"></i>
             <h4>Simulador de Llaveros NFC (Modo de Prueba)</h4>
         </div>
-        <p>Como las computadoras no tienen lector NFC físico, usa este panel para simular el acercamiento de un llavero:</p>
+        <p>Como las computadoras no tienen lector NFC físico, usa este panel para simular la lectura del ID en memoria (addr.05):</p>
         <div class="simulator-buttons">
-            <button type="button" class="btn-sim" onclick="simulateNfcScan('CRP-7A3F6B')">
+            <button type="button" class="btn-sim" onclick="simulateNfcScan('00:00:00:01')">
                 <span class="sim-tag">Dante</span>
-                <span class="sim-uid">CRP-7A3F6B</span>
+                <span class="sim-uid">00:00:00:01 (addr.05)</span>
             </button>
-            <button type="button" class="btn-sim btn-sim-new" onclick="simulateNfcScan('CRP-NEW' + Math.floor(Math.random()*9000 + 1000))">
+            <button type="button" class="btn-sim btn-sim-new" onclick="simulateNfcScan('00:00:00:99')">
                 <span class="sim-tag">Nuevo / No Registrado</span>
-                <span class="sim-uid">Escaneo Aleatorio</span>
+                <span class="sim-uid">00:00:00:99 (addr.05)</span>
             </button>
         </div>
     </div>
@@ -82,20 +82,32 @@
         // Check if Web NFC is supported
         if ('NDEFReader' in window) {
             statusBadge.classList.add('ready');
-            statusText.innerText = "Lector NFC Activo (Acerca un tag)";
+            statusText.innerText = "Lector NFC Activo (Acerca un llavero)";
             
             try {
                 const ndef = new NDEFReader();
                 ndef.scan().then(() => {
                     ndef.onreadingerror = () => {
-                        console.error("Error al leer el tag NFC.");
+                        console.error("Error al leer la memoria del llavero NFC.");
                         showFlashMessage("Error al leer el llavero. Intenta de nuevo.", "error");
                     };
-                    ndef.onreading = ({ serialNumber }) => {
-                        // Translate serialNumber to format (uppercase) and redirect
-                        console.log("NFC Tag UID: " + serialNumber);
-                        const formatUID = serialNumber.replace(/:/g, '').toUpperCase();
-                        window.location.href = `/cliente/${formatUID}/`;
+                    ndef.onreading = ({ message, serialNumber }) => {
+                        let memoryId = null;
+                        if (message && message.records) {
+                            for (const record of message.records) {
+                                if (record.data) {
+                                    const textDecoder = new TextDecoder(record.encoding || 'utf-8');
+                                    const content = textDecoder.decode(record.data).trim().toUpperCase();
+                                    if (content.match(/^[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}:[0-9A-F]{2}$/)) {
+                                        memoryId = content;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        const finalId = memoryId || serialNumber.replace(/:/g, '').toUpperCase();
+                        console.log("Memory Addr.05 ID: " + finalId);
+                        simulateNfcScan(finalId);
                     };
                 }).catch(error => {
                     console.warn("NFC scan failed to start: " + error);
@@ -109,6 +121,7 @@
             statusBadge.querySelector('.status-dot').className = "status-dot orange";
             statusText.innerText = "NFC físico no soportado en este dispositivo. Usa el Simulador.";
         }
+
 
         // Setup manual search
         const searchInput = document.getElementById('manualSearchInput');

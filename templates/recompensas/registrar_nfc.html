@@ -18,14 +18,14 @@
             </div>
 
             <div class="form-group">
-                <label for="id_nfc_uid"><i class="fa-solid fa-wifi"></i> UID del Llavero NFC *</label>
+                <label for="id_nfc_uid"><i class="fa-solid fa-microchip"></i> ID de Memoria NFC (addr.05) *</label>
                 <div class="nfc-input-group">
-                    <input type="text" name="nfc_uid" id="id_nfc_uid" placeholder="CRP-XXXXXX" required readonly value="{{ nfc_uid|default:'' }}">
+                    <input type="text" name="nfc_uid" id="id_nfc_uid" placeholder="00:00:00:01" required readonly value="{{ nfc_uid|default:siguiente_uid }}">
                     <button type="button" class="btn-nfc-scan" id="btnNfcScanForm" onclick="startFormNfcScan()">
-                        <i class="fa-solid fa-wifi"></i> Escanear
+                        <i class="fa-solid fa-microchip"></i> Grabar en Llavero
                     </button>
                 </div>
-                <span class="form-help-text" id="nfcFormHelpText">Haz clic en "Escanear" y acerca el llavero nuevo al dispositivo para capturar su UID.</span>
+                <span class="form-help-text" id="nfcFormHelpText">Haz clic en "Grabar en Llavero" y acercalo para escribir el ID autoincrementado en la memoria (addr.05).</span>
             </div>
 
             <div class="form-group">
@@ -55,9 +55,9 @@
             <i class="fa-solid fa-laptop-code"></i>
             <h4>Simulador para Registro (Modo de Prueba)</h4>
         </div>
-        <p>Genera un UID aleatorio para simular el escaneo de un llavero que nunca ha sido registrado:</p>
+        <p>Simula la asignación y grabación del ID autoincrementable (addr.05) en un llavero nuevo:</p>
         <button type="button" class="btn-sim-full" onclick="simulateRegistrationScan()">
-            <i class="fa-solid fa-keychain"></i> Simular Escaneo de Llavero Nuevo
+            <i class="fa-solid fa-microchip"></i> Simular Grabación de ID {{ siguiente_uid }} en Llavero
         </button>
     </div>
 </div>
@@ -65,82 +65,62 @@
 
 {% block extra_js %}
 <script>
-    // Get query params if we came from home simulator
     document.addEventListener("DOMContentLoaded", function() {
         const urlParams = new URLSearchParams(window.location.search);
         const uidParam = urlParams.get('nfc_uid');
         if (uidParam) {
             document.getElementById('id_nfc_uid').value = uidParam.toUpperCase();
-            showFlashMessage(`Llavero nuevo detectado: ${uidParam}. Completa el nombre para activar.`, 'info');
         }
     });
 
-    function startFormNfcScan() {
+    async function startFormNfcScan() {
         const uidInput = document.getElementById('id_nfc_uid');
         const helpText = document.getElementById('nfcFormHelpText');
         const btn = document.getElementById('btnNfcScanForm');
+        const targetId = uidInput.value || "{{ siguiente_uid }}";
 
         if (!('NDEFReader' in window)) {
-            showFlashMessage('La lectura NFC física no es soportada en este navegador. Usa el simulador de abajo.', 'error');
+            showFlashMessage('La lectura/escritura NFC física no es soportada en este navegador. Usa el simulador de abajo.', 'error');
             return;
         }
 
         btn.disabled = true;
-        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Leyendo...';
-        helpText.innerText = "Esperando llavero... Acerca el tag al lector NFC.";
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Grabando...';
+        helpText.innerText = `Esperando llavero para escribir ID ${targetId} en addr.05...`;
         helpText.style.color = "var(--primary)";
 
         try {
             const ndef = new NDEFReader();
-            ndef.scan().then(() => {
-                ndef.onreading = ({ serialNumber }) => {
-                    const formatUID = serialNumber.replace(/:/g, '').toUpperCase();
-                    uidInput.value = formatUID;
-                    
-                    // Reset button state
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-wifi"></i> Escanear';
-                    helpText.innerText = `Llavero detectado: ${formatUID}`;
-                    helpText.style.color = "var(--success)";
-                    
-                    showFlashMessage(`¡Llavero leído con éxito! UID: ${formatUID}`, 'success');
-                    
-                    // Play beep
-                    playBeepSound();
-                };
-                
-                ndef.onreadingerror = () => {
-                    btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-wifi"></i> Escanear';
-                    helpText.innerText = "Error en la lectura. Intenta de nuevo.";
-                    helpText.style.color = "red";
-                    showFlashMessage('Error al leer el tag NFC.', 'error');
-                };
-            }).catch(error => {
-                console.error(error);
-                btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-wifi"></i> Escanear';
-                helpText.innerText = "Permisos NFC denegados o hardware inactivo.";
-                helpText.style.color = "red";
+            await ndef.write({
+                records: [{ recordType: "text", data: targetId }]
             });
-        } catch(err) {
-            console.error(err);
+
             btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-wifi"></i> Escanear';
+            btn.innerHTML = '<i class="fa-solid fa-microchip"></i> Grabar en Llavero';
+            helpText.innerText = `¡ID ${targetId} grabado exitosamente en la memoria del llavero (addr.05)!`;
+            helpText.style.color = "var(--success)";
+            showFlashMessage(`¡ID ${targetId} escrito correctamente en la memoria del llavero NFC!`, 'success');
+            playBeepSound();
+        } catch (error) {
+            console.error(error);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-microchip"></i> Grabar en Llavero';
+            helpText.innerText = "Error al escribir en la memoria. Asegúrate de mantener cerca el llavero.";
+            helpText.style.color = "red";
+            showFlashMessage('Error al escribir en el llavero NFC: ' + error.message, 'error');
         }
     }
 
     function simulateRegistrationScan() {
-        const randId = "CRP-" + Math.random().toString(36).substring(2, 8).toUpperCase();
-        document.getElementById('id_nfc_uid').value = randId;
-        
+        const targetId = document.getElementById('id_nfc_uid').value || "{{ siguiente_uid }}";
         const helpText = document.getElementById('nfcFormHelpText');
-        helpText.innerText = `Simulación exitosa: Llavero ${randId}`;
+        helpText.innerText = `Simulación exitosa: ID ${targetId} listo para registrar en addr.05`;
         helpText.style.color = "var(--success)";
         
-        showFlashMessage(`Llavero simulado: ${randId}`, 'success');
+        showFlashMessage(`ID ${targetId} asignado correctamente.`, 'success');
         playBeepSound();
     }
 </script>
 {% endblock %}
+
 

@@ -21,6 +21,17 @@ def logout_view(request):
     return redirect('login')
 
 
+def generar_siguiente_nfc_id():
+    """Generar identificador de memoria autoincrementable addr.05 con formato (00:00:00:01)."""
+    ultimo = Cliente.objects.order_by('-id').first()
+    next_id = (ultimo.id + 1) if ultimo else 1
+    b1 = (next_id >> 24) & 0xFF
+    b2 = (next_id >> 16) & 0xFF
+    b3 = (next_id >> 8) & 0xFF
+    b4 = next_id & 0xFF
+    return f"{b1:02X}:{b2:02X}:{b3:02X}:{b4:02X}"
+
+
 def _inicializar_datos_demo():
     """Poblar datos iniciales de demostración en caso de que la base de datos esté vacía."""
     from .apps import crear_datos_iniciales
@@ -71,19 +82,20 @@ def buscar_cliente(request):
 
 @login_required
 def registrar_cliente(request):
+    siguiente_uid = generar_siguiente_nfc_id()
     if request.method == 'POST':
         nombre = request.POST.get('nombre', '').strip()
-        nfc_uid = request.POST.get('nfc_uid', '').strip().upper()
+        nfc_uid = request.POST.get('nfc_uid', '').strip().upper() or siguiente_uid
         telefono = request.POST.get('telefono', '').strip()
         cumpleanos = request.POST.get('cumpleanos', '')
         
         if not nombre or not nfc_uid:
-            messages.error(request, "El nombre y el UID del NFC son obligatorios.")
-            return render(request, 'recompensas/registrar_nfc.html')
+            messages.error(request, "El nombre y el ID de memoria NFC (addr.05) son obligatorios.")
+            return render(request, 'recompensas/registrar_nfc.html', {'siguiente_uid': siguiente_uid, 'nombre': nombre, 'telefono': telefono, 'cumpleanos': cumpleanos})
             
         if Cliente.objects.filter(nfc_uid=nfc_uid).exists():
-            messages.error(request, f"Ya existe un llavero registrado con el UID '{nfc_uid}'.")
-            return render(request, 'recompensas/registrar_nfc.html', {'nombre': nombre, 'telefono': telefono, 'cumpleanos': cumpleanos})
+            messages.error(request, f"Ya existe un llavero activado con el ID de memoria '{nfc_uid}'.")
+            return render(request, 'recompensas/registrar_nfc.html', {'siguiente_uid': siguiente_uid, 'nombre': nombre, 'nfc_uid': nfc_uid, 'telefono': telefono, 'cumpleanos': cumpleanos})
             
         try:
             with transaction.atomic():
@@ -103,14 +115,14 @@ def registrar_cliente(request):
                     referencia='Regalo de bienvenida'
                 )
                 
-            messages.success(request, f"Llavero activado con éxito para {cliente.nombre}. ¡Se han otorgado +2 puntos de bienvenida!")
+            messages.success(request, f"Llavero activado e ID {nfc_uid} grabado en la memoria del llavero para {cliente.nombre}.")
             return redirect('cliente_dashboard', nfc_uid=cliente.nfc_uid)
             
         except Exception as e:
             messages.error(request, f"Ocurrió un error al registrar: {str(e)}")
-            return render(request, 'recompensas/registrar_nfc.html', {'nombre': nombre, 'nfc_uid': nfc_uid, 'telefono': telefono, 'cumpleanos': cumpleanos})
+            return render(request, 'recompensas/registrar_nfc.html', {'siguiente_uid': siguiente_uid, 'nombre': nombre, 'nfc_uid': nfc_uid, 'telefono': telefono, 'cumpleanos': cumpleanos})
             
-    return render(request, 'recompensas/registrar_nfc.html')
+    return render(request, 'recompensas/registrar_nfc.html', {'siguiente_uid': siguiente_uid, 'nfc_uid': siguiente_uid})
 
 
 @login_required

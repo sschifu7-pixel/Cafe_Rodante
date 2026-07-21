@@ -31,10 +31,6 @@
                 </div>
             </div>
             <div class="header-right">
-                <div class="notifications">
-                    <i class="fa-regular fa-bell"></i>
-                    <span class="notification-badge">2</span>
-                </div>
                 <div class="user-profile">
                     <span class="user-name">¡Hola, {{ user.first_name|default:user.username }}!</span>
                     <a href="{% url 'logout' %}" class="logout-link" title="Cerrar sesión">

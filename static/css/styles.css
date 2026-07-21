@@ -2017,3 +2017,85 @@ body {
     background-color: var(--primary-light);
 }
 
+/* Modal Component */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(15, 23, 42, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.modal-card {
+    background-color: var(--card-bg);
+    border-radius: var(--radius-md);
+    width: 100%;
+    max-width: 450px;
+    box-shadow: var(--shadow-lg);
+    overflow: hidden;
+    animation: slideDown 0.3s ease-out;
+}
+
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+}
+
+.modal-header h3 {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--secondary);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.close-modal {
+    background: none;
+    border: none;
+    font-size: 20px;
+    color: var(--text-muted);
+    cursor: pointer;
+}
+
+.modal-body {
+    padding: 20px;
+    font-size: 14px;
+    color: var(--text-main);
+}
+
+.modal-footer {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    background-color: var(--bg-app);
+}
+
+.ios-steps-list {
+    margin-left: 20px;
+    margin-top: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ios-steps-list code {
+    background-color: var(--secondary-light);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--primary);
+    word-break: break-all;
+}
+
+

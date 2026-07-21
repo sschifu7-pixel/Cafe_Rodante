@@ -14,10 +14,18 @@
             </div>
         </div>
         <h2 class="scan-title" id="scanTitle">Acerca tu NFC</h2>
-        <p class="scan-subtitle" id="scanSubtitle">Coloca el llavero del cliente cerca de la antena NFC de tu dispositivo.</p>
-        <div class="nfc-status-badge" id="nfcStatusBadge">
+        <p class="scan-subtitle" id="scanSubtitle">Coloca el llavero del cliente cerca de la antena NFC de tu dispositivo.</p>        <div class="nfc-status-badge" id="nfcStatusBadge">
             <span class="status-dot green"></span>
             <span id="nfcStatusText">Lector NFC activo y listo</span>
+        </div>
+
+        <div class="ios-shortcut-panel" id="iosShortcutPanel" style="display: none; margin-top: 16px;">
+            <button type="button" class="btn-primary btn-block" onclick="runIOSNfcShortcut()">
+                <i class="fa-solid fa-mobile-screen-button"></i> Escanear Llavero con iPhone
+            </button>
+            <button type="button" class="btn-text" style="margin-top: 8px; font-size: 13px;" onclick="openIOSShortcutModal()">
+                <i class="fa-solid fa-circle-question"></i> ¿Cómo configurar el atajo en iPhone?
+            </button>
         </div>
     </div>
 
@@ -29,7 +37,7 @@
         <div class="search-form-group">
             <div class="search-input-wrapper">
                 <i class="fa-solid fa-magnifying-glass search-icon"></i>
-                <input type="text" id="manualSearchInput" placeholder="Buscar por Nombre, Teléfono o UID..." autocomplete="off">
+                <input type="text" id="manualSearchInput" placeholder="Buscar por Nombre, Teléfono o ID..." autocomplete="off">
                 <button type="button" class="clear-search-btn" id="clearSearchBtn"><i class="fa-solid fa-xmark"></i></button>
             </div>
         </div>
@@ -45,17 +53,64 @@
                 <span>Activar Nuevo Llavero</span>
             </a>
         </div>
-    </div></div>
+    </div>
+</div>
+
+<!-- Modal instructivo Atajo iOS -->
+<div class="modal-overlay" id="iosShortcutModal" style="display: none;">
+    <div class="modal-card">
+        <div class="modal-header">
+            <h3><i class="fa-brands fa-apple"></i> Configurar Atajo en iPhone</h3>
+            <button class="close-modal" onclick="closeIOSShortcutModal()"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="modal-body">
+            <p>Para lanzar el escáner NFC nativo de iOS con 1 toque:</p>
+            <ol class="ios-steps-list">
+                <li>Abre la app <strong>Atajos</strong> en tu iPhone y pulsa <strong>+</strong>.</li>
+                <li>Nombra el atajo exactamente como: <code>EscanearNFC</code></li>
+                <li>Agrega estas 2 acciones:
+                    <ul>
+                        <li><strong>1. Escanear etiqueta NFC</strong> (*Scan NFC Tag*)</li>
+                        <li><strong>2. Abrir URL</strong> ➔ Ingresa la URL de tu app: <br><code id="shortcutTargetUrlText"></code></li>
+                    </ul>
+                </li>
+            </ol>
+            <p style="font-size: 12px; color: var(--text-muted); margin-top: 12px;">¡Listo! Después de esto, al presionar <strong>"Escanear Llavero con iPhone"</strong> abrirá el lector automáticamente.</p>
+        </div>
+        <div class="modal-footer">
+            <button type="button" class="btn-primary btn-block" onclick="closeIOSShortcutModal()">Entendido</button>
+        </div>
+    </div>
+</div>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-    // Web NFC API setup
+    function isIOSDevice() {
+        return /iPad|iPhone|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+    }
+
+    // Web NFC API setup & iOS Shortcut
     document.addEventListener("DOMContentLoaded", function() {
         const statusBadge = document.getElementById('nfcStatusBadge');
         const statusText = document.getElementById('nfcStatusText');
+        const iosPanel = document.getElementById('iosShortcutPanel');
 
-        // Check if Web NFC is supported
+        const baseUrl = window.location.origin;
+        const targetUrlEl = document.getElementById('shortcutTargetUrlText');
+        if (targetUrlEl) targetUrlEl.innerText = `${baseUrl}/cliente/[Texto]/`;
+
+        if (isIOSDevice() || !('NDEFReader' in window)) {
+            if (iosPanel) iosPanel.style.display = 'block';
+            statusBadge.querySelector('.status-dot').className = "status-dot orange";
+            statusText.innerText = "Modo iOS / Atajo de iPhone disponible";
+            const scanTitle = document.getElementById('scanTitle');
+            const scanSubtitle = document.getElementById('scanSubtitle');
+            if (scanTitle) scanTitle.innerText = "Lectura NFC en iPhone";
+            if (scanSubtitle) scanSubtitle.innerText = "Usa el botón de abajo para lanzar el escáner NFC nativo del iPhone o busca manualmente.";
+        }
+
+        // Check if Web NFC is supported (Android/Chrome)
         if ('NDEFReader' in window) {
             statusBadge.classList.add('ready');
             statusText.innerText = "Lector NFC Activo (Acerca un llavero)";
@@ -93,13 +148,6 @@
             } catch (err) {
                 console.error("NFC Error: ", err);
             }
-        } else {
-            statusBadge.querySelector('.status-dot').className = "status-dot orange";
-            statusText.innerText = "Modo iOS / Búsqueda manual lista";
-            const scanTitle = document.getElementById('scanTitle');
-            const scanSubtitle = document.getElementById('scanSubtitle');
-            if (scanTitle) scanTitle.innerText = "Búsqueda de Llavero";
-            if (scanSubtitle) scanSubtitle.innerText = "En iOS (iPhone/iPad), ingresa el ID (ej. 00:00:00:01), Nombre o Teléfono abajo.";
         }
 
         // Setup manual search
@@ -172,7 +220,6 @@
                 });
         });
 
-
         clearBtn.addEventListener('click', function() {
             searchInput.value = '';
             resultsList.style.display = 'none';
@@ -181,9 +228,20 @@
         });
     });
 
+    function runIOSNfcShortcut() {
+        window.location.href = "shortcuts://run-shortcut?name=EscanearNFC";
+    }
+
+    function openIOSShortcutModal() {
+        document.getElementById('iosShortcutModal').style.display = 'flex';
+    }
+
+    function closeIOSShortcutModal() {
+        document.getElementById('iosShortcutModal').style.display = 'none';
+    }
+
     // NFC scan result handler
     function handleNfcScanResult(uid) {
-        // Update UI to show successful NFC read animation
         const scanCard = document.querySelector('.scan-card');
         const scanIcon = document.getElementById('scanIcon');
         const scanTitle = document.getElementById('scanTitle');
@@ -197,10 +255,8 @@
         if (scanTitle) scanTitle.innerText = "¡Lectura NFC Exitosa!";
         if (scanSubtitle) scanSubtitle.innerText = `Llavero detectado: ${uid}`;
 
-        // Play beep sound if browser allows
         playBeepSound();
 
-        // Flash message and redirect
         setTimeout(() => {
             fetch(`/cliente/buscar/?q=${uid}`)
                 .then(res => res.json())

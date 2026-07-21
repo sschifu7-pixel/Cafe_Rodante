@@ -1714,6 +1714,14 @@ body {
     color: #ffffff;
     font-size: 30px;
     box-shadow: 0 6px 16px rgba(214, 26, 34, 0.3);
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.company-logo-badge:hover {
+    transform: scale(1.08);
+    box-shadow: 0 8px 22px rgba(214, 26, 34, 0.45);
 }
 
 .brand-title {

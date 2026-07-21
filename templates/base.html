@@ -51,8 +51,8 @@
                 <button class="close-sidebar" id="closeSidebar"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <nav class="sidebar-nav">
-                <a href="{% url 'home' %}" class="{% if not cliente %}active{% endif %}">
-                    <i class="fa-solid fa-nfc-magnifying-glass"></i> Leer Llavero
+                <a href="{% url 'scanner' %}" class="{% if not cliente %}active{% endif %}">
+                    <i class="fa-solid fa-mobile-screen-button"></i> Leer Llavero NFC
                 </a>
                 <a href="{% url 'registrar_cliente' %}">
                     <i class="fa-solid fa-keychain"></i> Activar Llavero
@@ -98,14 +98,11 @@
             </a>
             <a href="{% url 'cliente_perfil' cliente.nfc_uid %}" class="nav-item {% if active_tab == 'perfil' %}active{% endif %}">
                 <i class="fa-solid fa-user"></i>
-                <span>Perfil</span>
-            </a>
-            <a href="{% url 'home' %}" class="nav-item-exit" title="Escanear otro llavero">
-                <i class="fa-solid fa-nfc-symbol"></i>
-                <span>Escaneo</span>
+                <span>Cliente</span>
             </a>
         </nav>
         {% endif %}
+
     </div>
 
     <!-- Main JavaScript -->

@@ -160,10 +160,20 @@
         updateQty(id, change, name, price, points);
     }
     
-    // Config SVG progress ring
+    // Config SVG progress ring and pre-load initial items like Image 2
     document.addEventListener("DOMContentLoaded", function() {
         setProgress(percent);
+        
+        // Auto-select initial demo items (Crepa Clásica & Frappé Oreo) if present
+        const products = document.querySelectorAll('.product-item');
+        if (products.length >= 2) {
+            const p1 = products[0];
+            const p2 = products[1];
+            updateQty(p1.dataset.id, 1, p1.dataset.nombre, parseFloat(p1.dataset.precio), parseInt(p1.dataset.puntos, 10));
+            updateQty(p2.dataset.id, 1, p2.dataset.nombre, parseFloat(p2.dataset.precio), parseInt(p2.dataset.puntos, 10));
+        }
     });
+
 
     function setProgress(percent) {
         const circle = document.getElementById('progressRingBar');

@@ -23,7 +23,29 @@ def _inicializar_datos_demo():
 @login_required
 def home(request):
     _inicializar_datos_demo()
+    cliente = Cliente.objects.filter(estado='activo').first()
+    if not cliente:
+        with transaction.atomic():
+            cliente = Cliente.objects.create(
+                nombre="Dante",
+                nfc_uid="CRP-7A3F6B",
+                telefono="5512345678",
+                cumpleanos="1995-06-12",
+                estado="activo"
+            )
+            regalo = Recompensa.objects.first()
+            MovimientoPuntos.objects.create(cliente=cliente, tipo="acumulacion", cantidad=2, referencia="Regalo de bienvenida")
+            MovimientoPuntos.objects.create(cliente=cliente, tipo="acumulacion", cantidad=6, referencia="Compra registrada - Venta de prueba 1")
+            MovimientoPuntos.objects.create(cliente=cliente, tipo="acumulacion", cantidad=14, referencia="Compra registrada - Venta de prueba 2")
+            MovimientoPuntos.objects.create(cliente=cliente, tipo="canje", cantidad=-20, referencia="Recompensa utilizada - Producto gratis", recompensa=regalo)
+            MovimientoPuntos.objects.create(cliente=cliente, tipo="acumulacion", cantidad=16, referencia="Compra registrada - Venta de prueba 3")
+    return redirect('cliente_dashboard', nfc_uid=cliente.nfc_uid)
+
+
+@login_required
+def scanner(request):
     return render(request, 'recompensas/home.html')
+
 
 
 @login_required

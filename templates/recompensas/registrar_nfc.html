@@ -18,26 +18,26 @@
             </div>
 
             <div class="form-group">
-                <label for="id_nfc_uid"><i class="fa-solid fa-nfc-symbol"></i> UID del Llavero NFC *</label>
+                <label for="id_nfc_uid"><i class="fa-solid fa-wifi"></i> UID del Llavero NFC *</label>
                 <div class="nfc-input-group">
                     <input type="text" name="nfc_uid" id="id_nfc_uid" placeholder="CRP-XXXXXX" required readonly value="{{ nfc_uid|default:'' }}">
                     <button type="button" class="btn-nfc-scan" id="btnNfcScanForm" onclick="startFormNfcScan()">
-                        <i class="fa-solid fa-nfc-symbol"></i> Escanear
+                        <i class="fa-solid fa-wifi"></i> Escanear
                     </button>
                 </div>
                 <span class="form-help-text" id="nfcFormHelpText">Haz clic en "Escanear" y acerca el llavero nuevo al dispositivo para capturar su UID.</span>
             </div>
 
-            <div class="form-row">
-                <div class="form-group col-6">
-                    <label for="id_telefono"><i class="fa-solid fa-phone"></i> Teléfono (Opcional)</label>
-                    <input type="tel" name="telefono" id="id_telefono" placeholder="5512345678" value="{{ telefono|default:'' }}">
-                </div>
-                <div class="form-group col-6">
-                    <label for="id_cumpleanos"><i class="fa-solid fa-cake-candles"></i> Cumpleaños (Opcional)</label>
-                    <input type="date" name="cumpleanos" id="id_cumpleanos" value="{{ cumpleanos|default:'' }}">
-                </div>
+            <div class="form-group">
+                <label for="id_telefono"><i class="fa-solid fa-phone"></i> Teléfono (Opcional)</label>
+                <input type="tel" name="telefono" id="id_telefono" placeholder="5512345678" value="{{ telefono|default:'' }}">
             </div>
+
+            <div class="form-group">
+                <label for="id_cumpleanos"><i class="fa-solid fa-cake-candles"></i> Cumpleaños (Opcional)</label>
+                <input type="date" name="cumpleanos" id="id_cumpleanos" value="{{ cumpleanos|default:'' }}">
+            </div>
+
 
             <div class="form-actions">
                 <a href="{% url 'home' %}" class="btn-outline">Cancelar</a>
@@ -99,7 +99,7 @@
                     
                     // Reset button state
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-nfc-symbol"></i> Escanear';
+                    btn.innerHTML = '<i class="fa-solid fa-wifi"></i> Escanear';
                     helpText.innerText = `Llavero detectado: ${formatUID}`;
                     helpText.style.color = "var(--success)";
                     
@@ -111,7 +111,7 @@
                 
                 ndef.onreadingerror = () => {
                     btn.disabled = false;
-                    btn.innerHTML = '<i class="fa-solid fa-nfc-symbol"></i> Escanear';
+                    btn.innerHTML = '<i class="fa-solid fa-wifi"></i> Escanear';
                     helpText.innerText = "Error en la lectura. Intenta de nuevo.";
                     helpText.style.color = "red";
                     showFlashMessage('Error al leer el tag NFC.', 'error');
@@ -119,14 +119,14 @@
             }).catch(error => {
                 console.error(error);
                 btn.disabled = false;
-                btn.innerHTML = '<i class="fa-solid fa-nfc-symbol"></i> Escanear';
+                btn.innerHTML = '<i class="fa-solid fa-wifi"></i> Escanear';
                 helpText.innerText = "Permisos NFC denegados o hardware inactivo.";
                 helpText.style.color = "red";
             });
         } catch(err) {
             console.error(err);
             btn.disabled = false;
-            btn.innerHTML = '<i class="fa-solid fa-nfc-symbol"></i> Escanear';
+            btn.innerHTML = '<i class="fa-solid fa-wifi"></i> Escanear';
         }
     }
 

@@ -3,7 +3,7 @@ services:
     name: cafe-rodante-nfc
     env: python
     buildCommand: "./build.sh"
-    startCommand: "gunicorn cafe_rodante.wsgi"
+    startCommand: "gunicorn cafe_rodante.wsgi:application"
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0

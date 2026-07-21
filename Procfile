@@ -1,1 +1,2 @@
-web: gunicorn cafe_rodante.wsgi
+web: gunicorn cafe_rodante.wsgi:application
+

@@ -95,7 +95,11 @@
             }
         } else {
             statusBadge.querySelector('.status-dot').className = "status-dot orange";
-            statusText.innerText = "NFC físico no soportado en este dispositivo. Usa la búsqueda manual.";
+            statusText.innerText = "Modo iOS / Búsqueda manual lista";
+            const scanTitle = document.getElementById('scanTitle');
+            const scanSubtitle = document.getElementById('scanSubtitle');
+            if (scanTitle) scanTitle.innerText = "Búsqueda de Llavero";
+            if (scanSubtitle) scanSubtitle.innerText = "En iOS (iPhone/iPad), ingresa el ID (ej. 00:00:00:01), Nombre o Teléfono abajo.";
         }
 
         // Setup manual search
@@ -103,9 +107,28 @@
         const clearBtn = document.getElementById('clearSearchBtn');
         const resultsList = document.getElementById('searchResultsList');
 
+        // Allow pressing Enter in search input on iOS to go directly to client
+        searchInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const query = searchInput.value.trim();
+                if (query) {
+                    fetch(`/cliente/buscar/?q=${encodeURIComponent(query)}`)
+                        .then(res => res.json())
+                        .then(data => {
+                            if (data.status === 'success' && data.results.length > 0) {
+                                window.location.href = data.results[0].url;
+                            } else {
+                                showFlashMessage(`No se encontró cliente con: "${query}"`, 'error');
+                            }
+                        });
+                }
+            }
+        });
+
         searchInput.addEventListener('input', function() {
             const query = searchInput.value.trim();
-            if (query.length < 2) {
+            if (query.length < 1) {
                 resultsList.style.display = 'none';
                 resultsList.innerHTML = '';
                 clearBtn.style.display = 'none';
@@ -148,6 +171,7 @@
                     console.error("Search Error: ", err);
                 });
         });
+
 
         clearBtn.addEventListener('click', function() {
             searchInput.value = '';

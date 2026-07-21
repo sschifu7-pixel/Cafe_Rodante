@@ -20,12 +20,12 @@
             <div class="form-group">
                 <label for="id_nfc_uid"><i class="fa-solid fa-microchip"></i> ID de Memoria NFC (addr.05) *</label>
                 <div class="nfc-input-group">
-                    <input type="text" name="nfc_uid" id="id_nfc_uid" placeholder="00:00:00:01" required readonly value="{{ nfc_uid|default:siguiente_uid }}">
+                    <input type="text" name="nfc_uid" id="id_nfc_uid" placeholder="00:00:00:01" required value="{{ nfc_uid|default:siguiente_uid }}">
                     <button type="button" class="btn-nfc-scan" id="btnNfcScanForm" onclick="startFormNfcScan()">
                         <i class="fa-solid fa-microchip"></i> Grabar en Llavero
                     </button>
                 </div>
-                <span class="form-help-text" id="nfcFormHelpText">Haz clic en "Grabar en Llavero" y acercalo para escribir el ID autoincrementado en la memoria (addr.05).</span>
+                <span class="form-help-text" id="nfcFormHelpText">ID asignado automáticamente: <strong>{{ siguiente_uid }}</strong>. En Android graba por NFC; en iOS confirma directamente.</span>
             </div>
 
             <div class="form-group">
@@ -48,8 +48,6 @@
             </div>
         </form>
     </div>
-
-    </div>
 </div>
 {% endblock %}
 
@@ -61,6 +59,18 @@
         if (uidParam) {
             document.getElementById('id_nfc_uid').value = uidParam.toUpperCase();
         }
+        
+        // Detect iOS / Non-Web-NFC environment
+        if (!('NDEFReader' in window)) {
+            const btn = document.getElementById('btnNfcScanForm');
+            const helpText = document.getElementById('nfcFormHelpText');
+            if (btn) {
+                btn.innerHTML = '<i class="fa-solid fa-check"></i> Usar ID Asignado';
+            }
+            if (helpText) {
+                helpText.innerHTML = 'En iOS / Safari: El ID <strong>' + (document.getElementById('id_nfc_uid').value || '{{ siguiente_uid }}') + '</strong> está listo. Completa los datos y presiona "Activar Llavero".';
+            }
+        }
     });
 
     async function startFormNfcScan() {
@@ -70,7 +80,7 @@
         const targetId = uidInput.value || "{{ siguiente_uid }}";
 
         if (!('NDEFReader' in window)) {
-            showFlashMessage('NFC físico no disponible en este dispositivo/navegador. El ID de memoria asignado se guardará al enviar.', 'info');
+            showFlashMessage(`En iOS se utilizará el ID asignado: ${targetId}. Presiona "Activar Llavero" para guardar.`, 'info');
             return;
         }
 
@@ -95,7 +105,7 @@
             console.error(error);
             btn.disabled = false;
             btn.innerHTML = '<i class="fa-solid fa-microchip"></i> Grabar en Llavero';
-            helpText.innerText = "Error al escribir en la memoria. Asegúrate de mantener cerca el llavero.";
+            helpText.innerText = "Error al escribir en la memoria. Puedes continuar guardando con el botón de abajo.";
             helpText.style.color = "red";
             showFlashMessage('Error al escribir en el llavero NFC: ' + error.message, 'error');
         }
